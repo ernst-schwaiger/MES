@@ -34,5 +34,4 @@ endif()
 
 # Add subdirectories
 add_subdirectory(Libraries/DemoLib)
-add_subdirectory(FWMgmnt)
-add_subdirectory(KeyMgmnt)
+add_subdirectory(FWManager)

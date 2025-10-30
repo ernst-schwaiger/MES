@@ -4,14 +4,20 @@ Mobile and Embedded Security
 ## Build
 
 Prerequisites:
+
+FIXME: Add arm compiler suite
+
 ```bash
 sudo apt update
 sudo apt install -y g++ gcc cmake make gcovr pkg-config
 ```
 
+## Building/Flashing/Running Client
+FIXME
 
-### Release Binaries
+## Building/Running FWManager
 
+Release: Optimizations turned on
 ```bash
 mkdir release
 cd release
@@ -19,38 +25,29 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j
 ```
 
-### Debug Binaries
-
-Optimizations turned off, debugging symbols are included
-
+Debug: Optimizations turned off, debugging symbols are included
 ```bash
 mkdir debug
 cd debug
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 make -j
 ```
 
-## Run the Applications
-
+Run the application: 
 ```bash
-./release/KeyMgmnt/KeyMgmnt
-./release/FWMgmnt/FWMgmnt
+./release/FWManager/FWManager
+./debug/FWManager/FWManager
 ```
 
-## Execute the Unit Tests
-
+### Run unit tests:
 Either `ctest --output-on-failure` or run a test binary, e.g. `./debug/Libraries/DemoLib/DemoLibTest`.
 
-### Generate a Test Coverage Report
-
+### Generate a Test Coverage Report:
 FIXME: Does not work properly yet
-
 Build the debug binary, then run
-
 ```bash
 cmake --build debug --target coverage --config Debug
 ```
-
 The coverage report is available in `./debug/DemoLib/coverage.html`
 
 ## Develop on remote node using local VS Code
@@ -71,3 +68,19 @@ VS Code supports to connect to a remote node, and to execute as if VS code was r
 See also:
 - https://code.visualstudio.com/docs/remote/ssh
 - https://learn.microsoft.com/en-us/training/modules/develop-on-remote-machine/
+
+## Resources
+
+- Standards
+    - SUIT "Software Updates for Internet of Things" https://datatracker.ietf.org/group/suit/about/#autoid-2
+    - CoAp "The Constrained Application Protocol" https://coap.space/
+    - CoAp tutorial https://community.arm.com/cfs-file/__key/telligent-evolution-components-attachments/01-1996-00-00-00-00-53-31/ARM-CoAP-Tutorial-April-30-2014.pdf
+    - CoMI "CoAp Management Interface" https://datatracker.ietf.org/doc/html/draft-ietf-core-comi-04
+    - Yang https://en.wikipedia.org/wiki/YANG
+    - CBOR https://en.wikipedia.org/wiki/CBOR
+
+- CoAp "Constrained Application Protocol" Libraries
+    - https://libcoap.net
+    - https://github.com/chrysn/aiocoap
+
+FIXME: Migu, please add your resources
