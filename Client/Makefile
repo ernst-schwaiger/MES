@@ -1,11 +1,21 @@
-# FIXME: Just a Makefile stub here, adapt to your needs
-CC=gcc
-CCOPTS=-g0 -O2
+# name of your application
+APPLICATION = Client
 
-all: client
+# Change this to your board if you want to build for a different board
+BOARD ?= native
 
-client: src/main.c
-	gcc $(CCOPTS) src/main.c -o client
+# This has to be the absolute path to the RIOT base directory:
+RIOTBASE ?= $(CURDIR)/../RIOT
 
-clean:
-	rm -rf client
+# Comment this out to disable code in RIOT that does safety checking
+# which is not needed in a production environment but helps in the
+# development process:
+DEVELHELP ?= 1
+
+# Change this to 0 show compiler invocation lines by default:
+QUIET ?= 1
+
+SRC += src/main.c
+
+
+include $(RIOTBASE)/Makefile.include
