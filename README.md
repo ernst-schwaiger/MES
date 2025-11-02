@@ -13,7 +13,26 @@ sudo apt install -y g++ gcc cmake make gcovr pkg-config
 ```
 
 ## Building/Flashing/Running Client
-FIXME
+Initialize the RIOT repository
+```bash
+git submodule init
+git submodule update
+```
+
+Build the application:
+```bash
+make all
+```
+
+Flash the application:
+```bash
+make flash
+```
+
+Enter the client's terminal:
+```bash
+make term
+```
 
 ## Building/Running FWManager
 
@@ -72,15 +91,19 @@ See also:
 ## Resources
 
 - Standards
-    - SUIT "Software Updates for Internet of Things" https://datatracker.ietf.org/group/suit/about/#autoid-2
-    - CoAp "The Constrained Application Protocol" https://coap.space/
-    - CoAp tutorial https://community.arm.com/cfs-file/__key/telligent-evolution-components-attachments/01-1996-00-00-00-00-53-31/ARM-CoAP-Tutorial-April-30-2014.pdf
-    - CoMI "CoAp Management Interface" https://datatracker.ietf.org/doc/html/draft-ietf-core-comi-04
-    - Yang https://en.wikipedia.org/wiki/YANG
-    - CBOR https://en.wikipedia.org/wiki/CBOR
+    - [SUIT "Software Updates for Internet of Things"](https://datatracker.ietf.org/group/suit/about/#autoid-2)
+    - [SUIT Manifest Structure](https://datatracker.ietf.org/doc/html/draft-ietf-suit-manifest-34#name-metadata-structure-overview)
+    - [CoAp "The Constrained Application Protocol"](https://coap.space/)
+    - [CoAp tutorial](https://community.arm.com/cfs-file/__key/telligent-evolution-components-attachments/01-1996-00-00-00-00-53-31/ARM-CoAP-Tutorial-April-30-2014.pdf)
+    - [CoMI "CoAp Management Interface"](https://datatracker.ietf.org/doc/html/draft-ietf-core-comi-04)
+    - [Yang](https://en.wikipedia.org/wiki/YANG)
+    - [CBOR](https://en.wikipedia.org/wiki/CBOR)
 
 - CoAp "Constrained Application Protocol" Libraries
     - https://libcoap.net
     - https://github.com/chrysn/aiocoap
 
-FIXME: Migu, please add your resources
+- SUIT example
+  - [SUIT example general information](https://github.com/RIOT-OS/RIOT/tree/2025.07/examples/advanced/suit_update)
+  - [SUIT native example](https://github.com/RIOT-OS/RIOT/blob/2025.07/examples/advanced/suit_update/README.native.md)
+  - [SUIT hardware example](https://github.com/RIOT-OS/RIOT/blob/2025.07/examples/advanced/suit_update/README.hardware.md)
