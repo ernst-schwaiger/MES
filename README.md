@@ -5,12 +5,17 @@ Mobile and Embedded Security
 
 Prerequisites:
 
-FIXME: Add arm compiler suite
-
 ```bash
 sudo apt update
 sudo apt install -y g++ gcc cmake make gcovr pkg-config
 ```
+
+For building the design document:
+```bash
+sudo apt install -y texlive latexmk texlive-latex-extra
+```
+
+Editing LaTeX in VS code: Recommend installation of LaTeX Workshop extension from James Yu.
 
 ## Building/Flashing/Running Client
 Initialize the RIOT repository
@@ -87,6 +92,10 @@ VS Code supports to connect to a remote node, and to execute as if VS code was r
 See also:
 - https://code.visualstudio.com/docs/remote/ssh
 - https://learn.microsoft.com/en-us/training/modules/develop-on-remote-machine/
+
+## Open Topics
+
+Use of smartcard reader security token: Flash ssh key onto card/token. FW Manager only accepts new software if expected ssh key was provided to FW Manager (via Smartcard or security token).
 
 ## Resources
 
