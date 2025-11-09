@@ -54,5 +54,14 @@ dkms.conf
 # debug information files
 *.dwo
 
+# LaTeX temp files
+*.pdf
+*.aux
+*.fls
+start.log
+start.synctex.gz
+start.toc
+start.fdb_latexmk
+
 # CMake build folder
 build
