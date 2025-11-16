@@ -1,0 +1,43 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.1.2 Chrome/138.0.7204.243 Electron/37.4.0 Safari/537.36" version="28.1.2">
+  <diagram name="Page-1" id="rYd4iBlSZazGKfl_T8dS">
+    <mxGraphModel dx="934" dy="567" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ydd428vpFXxKqGVI9_MO-3" value="Build System&lt;div&gt;+ Security Token&lt;/div&gt;&lt;div&gt;- Cross Compiler ARM&lt;/div&gt;&lt;div&gt;- PKCS Driver&lt;/div&gt;&lt;div&gt;- LibP11 Library&lt;/div&gt;" style="image;html=1;image=img/lib/clip_art/computers/Workstation_128x128.png" vertex="1" parent="1">
+          <mxGeometry x="130" y="350" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ydd428vpFXxKqGVI9_MO-4" value="Firmware Management Server&lt;div&gt;(Raspberry Pi 4B)&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- PKI: Root Certificate,&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); background-color: light-dark(#ffffff, var(--ge-dark-color, #121212));&quot;&gt;Certs for Build System, SAMR21xpro (Kilian, Viktor)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- Communication with Build System (Ernst)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- Communication with SAMR21xpro (Stefan + Support Migu)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- Authenticate/Decrypt Firmware Update from DevEnv&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;(Kilian, Viktor)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- Encrypt/Sign Firmware for SAMR21xpro&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;(Kilian, Viktor)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- Trigger FOTA via SUIT (Migu)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- Generate Manifest files (Migu)&lt;/span&gt;&lt;/div&gt;" style="image;html=1;image=img/lib/clip_art/computers/Mainframe_128x128.png" vertex="1" parent="1">
+          <mxGeometry x="435" y="350" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ydd428vpFXxKqGVI9_MO-6" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="280" y="389.5" as="sourcePoint" />
+            <mxPoint x="430" y="389.5" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="370" y="389.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ydd428vpFXxKqGVI9_MO-7" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;strokeWidth=4;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="540" y="389.5" as="sourcePoint" />
+            <mxPoint x="720" y="390" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="630" y="389.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ydd428vpFXxKqGVI9_MO-8" value="SAMR21xpro&lt;div&gt;RIOT Os&lt;/div&gt;&lt;div&gt;- Communication with FW Management Server (Stefan + Support Migu)&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- Pull Firmware Update via SUIT (Migu)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;- Authenticate, Decrypt Firmware&amp;nbsp;&lt;span style=&quot;background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;(Kilian, Viktor, Migu)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;- Flash Updated Firmware (Migu, Kilian)&lt;/div&gt;&lt;div&gt;Crypto Tests (Kilian)&lt;/div&gt;" style="image;html=1;image=img/lib/clip_art/networking/Print_Server_Wireless_128x128.png" vertex="1" parent="1">
+          <mxGeometry x="860" y="334" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ydd428vpFXxKqGVI9_MO-9" value="&lt;span style=&quot;text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;CoAp on DTLS + IPV6 on LR-WPAN&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="600" y="310" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ydd428vpFXxKqGVI9_MO-10" value="SSH or TLS or encrypted TCP connection&lt;div&gt;on IPV4 &amp;amp; Eth or WLAN&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="300" y="300" width="100" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
