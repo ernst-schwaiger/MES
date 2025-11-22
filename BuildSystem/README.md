@@ -117,3 +117,32 @@ openssl x509 -req \
     -out mes_key.crt \
     -days 365 -sha256
 ```
+
+Convert certificate to der/binary format
+```bash
+openssl x509 -in mes_key.crt -outform der -out mes_key.der
+```
+
+Write certificate back to security token
+
+```bash
+pkcs11-tool --module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so \
+            --slot 0 \
+            --login \
+            --pin "123456" \
+            --write-object mes_key.der \
+            --type cert \
+            --id 01 \
+            --label "MES_Key_Cert"
+```
+
+
+## Build libp11
+
+Download released tarball from github, e.g. [libp11-0.4.16.tar.gz](https://github.com/OpenSC/libp11/releases/download/libp11-0.4.16/libp11-0.4.16.tar.gz), extract it, cd into the folder and configure it with the locally compiled openssl version, install it below the $HOME folder again.
+
+```bash
+LDFLAGS=-L$HOME/openssl-local/lib64 CFLAGS=-I$HOME/openssl-local/include ./configure --prefix=$HOME/libp11-local
+make -sj && make install
+```
+
