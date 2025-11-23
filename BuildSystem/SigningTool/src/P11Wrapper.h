@@ -1,43 +1,21 @@
 #pragma once
 
-#include <string>
+#include <string.h>
 #include <stdexcept>
-#include <libp11.h>
+#include <array>
 #include <algorithm>
 
+#include <libp11.h>
 #include <openssl/sha.h>
 
-
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-
-
-#ifndef TOKEN_SIGNING_LABEL
-    #error "Symbol TOKEN_SIGNING_LABEL is missing"
-#endif
-
-#ifndef PKCS_MODULE
-    #error "Provide PKCS_MODULE is missing"
-#endif
-
-//#define MAX_SIGSIZE 256
-
-//constexpr std::string pkcs_module = TOSTRING(PKCS_MODULE);
-static const std::string pkcs_module = "/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so";
-static const std::string signing_label = "MES_Signing";
-
-// static uint8_t const ASN_1_DIGEST_INFO[] = 
-// {
-//     0x30, 0x31,                                                                 // Sequence, total length
-//           0x30, 0x0d,                                                           // OID Sequence, length
-//                 0x06, 0x09,                                                     // Object identifier, 9 bytes long
-//                       0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01,     // OID for SHA-256
-//                 0x05, 0x00,                                                     // NULL
-//           0x04, 0x20                                                            // octet string, 32 bytes long
-// };
+#include "config.h" // generated in Makefile
 
 namespace p11
 {
+
+constexpr size_t SIGNATURE_LEN_BYTES = 256U; // RSA-SHA-256 signatures
+
+typedef std::array<uint8_t, SIGNATURE_LEN_BYTES> SignatureType;
 
 class Wrapper
 {
@@ -50,7 +28,7 @@ public:
     {
         m_ctx = PKCS11_CTX_new();
 
-        int rc = PKCS11_CTX_load(m_ctx, pkcs_module.c_str());
+        int rc = PKCS11_CTX_load(m_ctx, PKCS_MODULE);
         if (rc) 
         {
             throw std::runtime_error("Failed to load library.");
@@ -92,13 +70,13 @@ public:
 
     int signBuffer(unsigned char const *buffer, unsigned int bufSize, unsigned char *signature, unsigned int *sigSize) const
     {
+        // Picks the certificate with the compiled-in signing label
         PKCS11_CERT *cert = getCertificate();
         if (cert == nullptr)
         {
             return -1;
         }
 
-        // pick first certificate
         PKCS11_KEY *authkey = PKCS11_find_key(cert);
         if (authkey == nullptr)
         {
@@ -118,30 +96,6 @@ public:
 
         return 0;
     }
-
-    // int verifySignature(unsigned char const *buffer, unsigned int bufSize, unsigned char const *signature, unsigned int sigSize) const
-    // {
-    //     PKCS11_CERT *cert = getCertificate();
-    //     if (cert == nullptr)
-    //     {
-    //         return -1;
-    //     }
-
-    //     EVP_PKEY *pubkey = X509_get_pubkey(cert->x509);
-    //     if (pubkey == nullptr)
-    //     {
-    //         return -1;
-    //     }
-
-    //     if (RSA_verify(NID_sha1, buffer, bufSize, signature, sigSize, (RSA *)EVP_PKEY_get0_RSA(pubkey)) != 1)
-    //     {
-    //         EVP_PKEY_free(pubkey);
-    //         return -1;
-    //     }
-        
-    //     EVP_PKEY_free(pubkey);
-    //     return 0;
-    // }
     
 private:
 
@@ -155,7 +109,7 @@ private:
 
         for (unsigned int certIdx = 0; certIdx < ncerts; certIdx++)
         {
-            if (signing_label == certs[certIdx].label)
+            if (!strncmp(TOKEN_SIGNING_LABEL, certs[certIdx].label, strlen(TOKEN_SIGNING_LABEL)))
             {
                 ret = &certs[certIdx];
                 break;
@@ -173,7 +127,7 @@ private:
     PKCS11_CTX *m_ctx;
     PKCS11_SLOT *m_slots = nullptr;
     PKCS11_SLOT *m_tokenSlot;
-    unsigned int m_nslots = 0;    
+    unsigned int m_nslots;    
 };
 
 } // namespace p11

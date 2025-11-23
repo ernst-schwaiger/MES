@@ -11,7 +11,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/signing-tool",
-            "args": [ "123456", "/home/kali/projects/MES/BuildSystem/SigningTool/infile.txt" ],
+            "args": [ "123456", "infile.txt", "infile.txt.sig" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

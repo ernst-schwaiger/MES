@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <array>
 #include <cstdint>
 #include <fstream>
 
@@ -12,11 +11,7 @@
 #include "P11Wrapper.h"
 
 using namespace std;
-
-constexpr size_t SIGNATURE_LEN_BYTES = 256U;
-
-typedef array<uint8_t, SIGNATURE_LEN_BYTES> SignatureType;
-
+using namespace p11;
 
 static int getFileLength(string const &path, size_t &fileLength)
 {
@@ -30,16 +25,16 @@ static int getFileLength(string const &path, size_t &fileLength)
     return ret;
 }
 
-int signFile(string const &path, p11::Wrapper const &w)
+int signFile(string const &inpath, string const &outpath, p11::Wrapper const &w)
 {
     size_t fileLength;
-    int ret = getFileLength(path, fileLength);
+    int ret = getFileLength(inpath, fileLength);
     if (ret != 0)
     {
         return ret;
     }
 
-    ifstream file(path, ios::binary);
+    ifstream file(inpath, ios::binary);
     vector<uint8_t> buf(fileLength);
 
     if (!file.read(reinterpret_cast<char *>(buf.data()), fileLength)) 
@@ -55,7 +50,6 @@ int signFile(string const &path, p11::Wrapper const &w)
     }
 
     // write signature
-    string outpath = path + ".sig";
     ofstream outFile(outpath, ios::out | ios::binary | ios::trunc);
     if (!outFile.write(reinterpret_cast<char *>(outSignature.data()), outSigLen))
     {
@@ -70,22 +64,29 @@ int main(int argc, char *argv[])
 {
     int ret = 0;
 
-    if (argc != 3) 
+    if (argc != 4) 
     {
-        cerr << "usage: " << argv[0] << "<PIN> <file> \n";
+        cerr << "usage: " << argv[0] << "<PIN> <file-to-sign> <signaturefile>\n";
         return 1;
     }
 
     string pin=argv[1];
     string inFile=argv[2];
+    string sigFile=argv[3];
 
     try
     {
+        cout << "Setting up crypto token...\n";
         p11::Wrapper wrapper(pin.c_str());
-        ret = signFile(inFile, wrapper);
+        cout << "Signing file " << inFile << "...\n";
+        ret = signFile(inFile, sigFile, wrapper);
         if (ret != 0)
         {
             cerr << "Failed to sign file " << inFile << ".\n";
+        }
+        else
+        {
+            cout << "Successfully written signature of file " << inFile << " to " << sigFile <<".\n";
         }
     }
     catch(const runtime_error& e)

@@ -98,16 +98,16 @@ export LD_LIBRARY_PATH="$HOME/libp11-local/lib:$LD_LIBRARY_PATH"
 
 ## Generate keys and certificates, build the signing-tool
 
-cd into `MES/BuildSystem`, ensure that the crypto token is plugged in and enabled for the virtual machine. To build the `siging-tool` and to install the certificates and keys in the crypto token, type `make`. The built `signing-tool` is generates signatures for files using the "MES_Signing" key. The generated signature is written into a `.sig` file. `signing-tool` can be tested against `openssl` by generating the signatures for `testfile.txt` like this:
+cd into `MES/BuildSystem`, ensure that the crypto token is plugged in and enabled for the virtual machine. To build the `siging-tool` and to install the certificates and keys in the crypto token, type `make`. The built `signing-tool` generates signatures for files using the "MES_Signing" key. `signing-tool` can be tested against `openssl` by generating the signatures for `testfile.txt` using both tools like this:
 
 ```bash
 make
 echo "This is a test" > testfile.txt
-./signing-tool 123456 testfile.txt
+./signing-tool 123456 testfile.txt testfile.txt.sig
 openssl dgst -sha256 -sign MES_priv.pem -out testfile.txt.sig2 testfile.txt
 ```
 
-FIXME: Currently the "MES_Signing" key is available without providing the PIN. Adapt the makefile to repair that.
+The signature files `testfile.txt.sig` and `testfile.txt.sig` must have the same content. FIXME: Currently the "MES_Signing" key is available without providing the PIN. Adapt the makefile to repair that.
 
 
 ## Create an RSA private/public key pair using pkcs11-tool
