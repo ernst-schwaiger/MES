@@ -6,6 +6,31 @@ The Project description section provides a brief overview of the project, coveri
 \subsection{Problem description}
 
 \paragraph{}
-FIXME
+The aim of the project is to develop a system which allows to distribute newer versions of a piece of firmware onto a number of client nodes. The firmware update is created on a \emph{Build System}, then transferred to a \emph{Firmware Management Server}, which subsequently sends packages containing the updated firmware to a number of \emph{Client} nodes which are installing the updates.
 
+\paragraph{}
+Figure \ref{fig:system} displays an overview of the system. A self-signed \emph{Root/CA} certificate is used for siging a \emph{Build\_Signing} certificate which is stored together with the private key on a crypto token.  When a new firmware update package is built, it is signed using that key to prove its authenticity to the \emph{Firmware Management Server} which is receiving that package via ssh/scp.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/Overview.drawio}
+	\caption{System Description}
+	\label{fig:system}
+\end{figure}
+
+\paragraph{}
+A service on the \emph{Firmware Management Server} detects a newly arrived firmware update, verifies the validity of the \emph{Build\_Signing} certificate and the validity of the signature. The service puts the received firmware into a SUIT update package enclosing all required meta data, signs the package using its private signing key (of the \emph{Mgmnt\_Signing} certificate), then generates a session AES key, which it uses to encrypt the SUIT update package. For each \emph{Client} node it then encrypts the AES key using the \emph{Client} public key and stores it along with the package signature.
+
+\paragraph{}
+The encrypted SUIT update package can either be directly pushed to all \emph{Client} nodes via \emph{6LoWPAN} multicast or can be pulled by each client. In addition to that, the encrypted AES key and the SUIT signature are pushed/pulled to the clients using unicast communication.
+
+\paragraph{}
+On the client system, both the encrypted firmware and the encrypted key and signature arrive. The client first decrypts the AES key using its private key. In the next step, it decrypts the package using the AES key and verifies its validity using the received signature. If the \emph{Firmware Management Server} certificate and the decrypted SUIT update package are both valid, the client can install/flash the firmware update.
+
+\paragraph{Open Topics}
+\begin{itemize}
+    \item The key for signing the package on the build system should directly be created on the token to prevent it being copied around.
+    \item Do we require a server authentication using ssh/scp?
+    \item Shall DTLS/CoAPS/OSCORE be used for securing communication between Clients and FW Manager? Is encrypting the payload sufficient?
+\end{itemize}
 

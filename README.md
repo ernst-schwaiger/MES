@@ -17,6 +17,10 @@ sudo apt install -y texlive latexmk texlive-latex-extra
 
 Editing LaTeX in VS code: Recommend installation of LaTeX Workshop extension from James Yu.
 
+## Building Software on BuildSystem
+
+See [Readme.md](BuildSystem/README.md) in BuildSystem folder.
+
 ## Building/Flashing/Running Client
 Initialize the RIOT repository
 ```bash
@@ -96,6 +100,10 @@ See also:
 ## Open Topics
 
 Use of smartcard reader security token: Flash ssh key onto card/token. FW Manager only accepts new software if expected ssh key was provided to FW Manager (via Smartcard or security token).
+
+Which Buster version to use for a working IEEE 802.15.4 and 6LoWPAN stack? I used this one:
+https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2021-05-28/2021-05-07-raspios-buster-arm64.zip
+
 
 ## Resources
 
