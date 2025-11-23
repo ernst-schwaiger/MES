@@ -3,6 +3,10 @@
 #include <string>
 #include <stdexcept>
 #include <libp11.h>
+#include <algorithm>
+
+#include <openssl/sha.h>
+
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -16,9 +20,21 @@
     #error "Provide PKCS_MODULE is missing"
 #endif
 
-#define MAX_SIGSIZE 256
+//#define MAX_SIGSIZE 256
 
-std::string pkcs_module = TOSTRING(PKCS_MODULE);
+//constexpr std::string pkcs_module = TOSTRING(PKCS_MODULE);
+static const std::string pkcs_module = "/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so";
+static const std::string signing_label = "MES_Signing";
+
+// static uint8_t const ASN_1_DIGEST_INFO[] = 
+// {
+//     0x30, 0x31,                                                                 // Sequence, total length
+//           0x30, 0x0d,                                                           // OID Sequence, length
+//                 0x06, 0x09,                                                     // Object identifier, 9 bytes long
+//                       0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01,     // OID for SHA-256
+//                 0x05, 0x00,                                                     // NULL
+//           0x04, 0x20                                                            // octet string, 32 bytes long
+// };
 
 namespace p11
 {
@@ -34,7 +50,7 @@ public:
     {
         m_ctx = PKCS11_CTX_new();
 
-        int rc = PKCS11_CTX_load(m_ctx, pkcs_module);
+        int rc = PKCS11_CTX_load(m_ctx, pkcs_module.c_str());
         if (rc) 
         {
             throw std::runtime_error("Failed to load library.");
@@ -74,7 +90,7 @@ public:
         cleanup();
     }
 
-    int signBuffer(unsigned char const *buffer, unsigned int bufSize, unsigned char *signature, unsigned int *sigSize)
+    int signBuffer(unsigned char const *buffer, unsigned int bufSize, unsigned char *signature, unsigned int *sigSize) const
     {
         PKCS11_CERT *cert = getCertificate();
         if (cert == nullptr)
@@ -89,7 +105,13 @@ public:
             return -1;
         }
 
-        if (PKCS11_sign(NID_sha1, buffer, bufSize, signature, sigSize, authkey) != 1)
+        unsigned char digestBuf[ 256 / 8];
+        if (SHA256(buffer, bufSize, &digestBuf[0]) == nullptr)
+        {
+            return -1;
+        }
+
+        if (PKCS11_sign(NID_sha256, digestBuf, sizeof(digestBuf), signature, sigSize, authkey) != 1)
         {
             return -1;
         }
@@ -97,33 +119,33 @@ public:
         return 0;
     }
 
-    int verifySignature(unsigned char const *buffer, unsigned int bufSize, unsigned char const *signature, unsigned int sigSize)
-    {
-        PKCS11_CERT *cert = getCertificate();
-        if (cert == nullptr)
-        {
-            return -1;
-        }
+    // int verifySignature(unsigned char const *buffer, unsigned int bufSize, unsigned char const *signature, unsigned int sigSize) const
+    // {
+    //     PKCS11_CERT *cert = getCertificate();
+    //     if (cert == nullptr)
+    //     {
+    //         return -1;
+    //     }
 
-        EVP_PKEY *pubkey = X509_get_pubkey(cert->x509);
-        if (pubkey == nullptr)
-        {
-            return -1;
-        }
+    //     EVP_PKEY *pubkey = X509_get_pubkey(cert->x509);
+    //     if (pubkey == nullptr)
+    //     {
+    //         return -1;
+    //     }
 
-        if (RSA_verify(NID_sha1, buffer, bufSize, signature, sigSize, (RSA *)EVP_PKEY_get0_RSA(pubkey)) != 1)
-        {
-            EVP_PKEY_free(pubkey);
-            return -1;
-        }
+    //     if (RSA_verify(NID_sha1, buffer, bufSize, signature, sigSize, (RSA *)EVP_PKEY_get0_RSA(pubkey)) != 1)
+    //     {
+    //         EVP_PKEY_free(pubkey);
+    //         return -1;
+    //     }
         
-        EVP_PKEY_free(pubkey);
-        return 0;
-    }
+    //     EVP_PKEY_free(pubkey);
+    //     return 0;
+    // }
     
 private:
 
-    PKCS11_CERT *getCertificate()
+    PKCS11_CERT *getCertificate() const
     {
         PKCS11_CERT *certs = nullptr;
         PKCS11_CERT *ret = nullptr;
@@ -133,7 +155,7 @@ private:
 
         for (unsigned int certIdx = 0; certIdx < ncerts; certIdx++)
         {
-            if (certs[certIdx].label == TOSTRING(TOKEN_SIGNING_LABEL))
+            if (signing_label == certs[certIdx].label)
             {
                 ret = &certs[certIdx];
                 break;

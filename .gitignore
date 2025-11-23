@@ -65,3 +65,10 @@ start.fdb_latexmk
 
 # CMake build folder
 build
+
+# Built certificates and keys
+*.pem
+*.srl
+*.der
+.token_Key
+.token_Cert
