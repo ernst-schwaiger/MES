@@ -8,7 +8,8 @@ Install dependencies
 sudo apt install p11-kit libp11-kit-dev pkg-config ninja-build gcc make meson opensc
 ```
 
-Checkout 3.0.x version of openssl, e.g. 3.0.14 for Ubuntu 22-04 or 3.4.0 for Kali 2025-08-12 (avoid versions 4.x!)
+Get the version of the used openssl version via `openssl version` then download the sources for exactly this version, e.g. 3.0.14 for Ubuntu 22-04 or 3.4.0 for Kali 2025-08-12 (avoid versions 4.x!)
+
 ```bash
 wget https://www.openssl.org/source/openssl-3.0.14.tar.gz
 tar -xzf openssl-3.0.14.tar.gz
@@ -29,7 +30,7 @@ export PATH="$HOME/openssl-local/bin:$PATH"
 export PKG_CONFIG_PATH="$HOME/openssl-local/lib64/pkgconfig:$PKG_CONFIG_PATH"
 ```
 
-Open a new terminal so that the settings are taken over, test with `openssl version`. It must produce the checked out version, e.g. 3.0.14.
+Open a new terminal so that the settings are taken over, test with `which openssl`. It should display the local path openssl was installed into.
 
 ## Build PKCS provider for openssl
 
@@ -109,6 +110,49 @@ openssl dgst -sha256 -sign MES_priv.pem -out testfile.txt.sig2 testfile.txt
 
 The signature files `testfile.txt.sig` and `testfile.txt.sig` must have the same content. FIXME: Currently the "MES_Signing" key is available without providing the PIN. Adapt the makefile to repair that.
 
+## Generate an SSH Key pair using pkcs11-tool and SSH
+
+Create an SSH Key pair as follows
+```bash
+pkcs11-tool --module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so \
+    --login --pin "123456" \
+    --keypairgen --key-type rsa:2048 \
+    --id 01 --label "SSH"
+```
+
+Extract the public key to file `ssh_pubkey.der`:
+```bash
+pkcs11-tool --module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so \
+    --login --pin "123456" \
+    --read-object --type pubkey \
+    --id 01 --output ssh_pubkey.der
+```
+
+Convert public key to pem format:
+```bash
+openssl rsa -inform DER -pubin -in ssh_pubkey.der -outform PEM -out ssh_pubkey.pem
+```
+
+Generate an ssh key out of it, copy it to the ssh server:
+```bash
+ssh-keygen -i -m PKCS8 -f ssh_pubkey.pem > id_rsa.pub
+scp id_rsa.pub <username>@<ssh-server>
+```
+
+On the server, logged-in to the account for ssh-ing to it, create a `.ssh` folder (unless already existing), and a file `authorized_keys` in it, then append the content of the copied public key to the end of `authorized_keys`:
+
+```bash
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+touch ~/.ssh/authorized_keys
+cat ~/id_rsa.pub >> ~/.ssh/authorized_keys
+```
+
+On the client, `ssh` must be invoked with the pkcs agent so that the private ssh key is taken from there, skip the `-vvv` to not produce verbose output. `ssh` may prompt for a PIN. After the pin is entered, the ssh connection should be established. Ensure that the security token is plugged in and activated in the virtual machine (see above):
+
+```bash
+ssh -vvv -I /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so <username>@<ssh-server>
+```
 
 ## Create an RSA private/public key pair using pkcs11-tool
 
@@ -173,6 +217,3 @@ pkcs11-tool --module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so \
             --id 01 \
             --label "MES_Key_Cert"
 ```
-
-
-
