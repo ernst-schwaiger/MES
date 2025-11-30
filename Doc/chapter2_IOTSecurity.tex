@@ -24,11 +24,47 @@ In this case, the algorithm chosen is CBC due to its simplicity and provides con
 AEAD ciphers were considered, however, in this case, it is not necessary as integrity is provided by the signature.
 The signature algorithm used is Ed25519 since RIOT-OS provides the crypthographic library \textit{C25519}.
 
-How the key is generated and distributed to be used for encryption/decryption as well as the firmware signature is described in \ref{KeyManagement} 
-
 \paragraph{Process}
 To update the firmware, the SUIT procedure is used where the manifest and the encrypted and signed firmware are uploaded onto the firmware management server. The build process is explained in \ref{FirmwareManagement}.
 The hosts uses the manifest to execute the necessary steps to flash the device with the new firmware image.
 Fetching the necessary data such as the SUIT manifest or the encrypted firmware relies on CoAP with the library nanoCoaP.
+Figure \ref{fig:suit} shows how an update can be triggered.
 
-// TODO SUIT flowchart with devices
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/SUIT-MES.drawio.png}
+	\caption{Possibilities to trigger a SFOTA process with SUIT}
+	\label{fig:suit}
+\end{figure}
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{|c|l|l|}
+  \hline
+  \textbf{Category} & \textbf{Main Risk} & \textbf{Mitigation} \\
+  \hline
+  Spoofing & Spoofed update server & Signed SUIT manifest \\
+  \hline
+  Tampering & Modified SUIT manifest & Signed SUIT manifest \\
+  \hline
+   & Modified firmware image & End-to-end encryption \\
+  \hline
+  Repudiation & Server denies update action & Audit logs \\
+  \hline
+   & Device denies update action & Audit logs \\
+  \hline
+  Info disclosure & SSH interception & Strong SSH keys, host verification \\
+  \hline
+  Denial of Service & Fake update notifications & Not handled \\
+  \hline
+  Elevation of privilege & Root Certificate compromise & Not handled \\
+  \hline
+  \end{tabular}
+  \caption{STRIDE Threat Model}
+  \label{table:stride}
+\end{table}
+
+\paragraph{STRIDE}
+Potential threats need to be considered when implementing this update process. Therefore, the table \ref{table:stride} presents some main risks across the STRIDE categories and mitigations that are done in the implementation. 
+However, some risks were identified that are not going to be handled due to complexity and time limitations.
+

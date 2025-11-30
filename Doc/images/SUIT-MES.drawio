@@ -1,0 +1,89 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" version="28.2.7">
+  <diagram name="Page-1" id="_OS3Z9C4Tqc8OekILTaV">
+    <mxGraphModel dx="984" dy="520" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="bbTCoWQHHCRtWDn3CnuV-4" target="bbTCoWQHHCRtWDn3CnuV-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-4" value="SUIT Update&lt;div&gt;Notification Trigger&lt;/div&gt;" style="shape=step;perimeter=stepPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="240" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="bbTCoWQHHCRtWDn3CnuV-5" target="bbTCoWQHHCRtWDn3CnuV-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-5" value="SUIT Update&lt;div&gt;Device Trigger&lt;/div&gt;" style="shape=step;perimeter=stepPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="240" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="bbTCoWQHHCRtWDn3CnuV-6" target="bbTCoWQHHCRtWDn3CnuV-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-6" value="Gain access to FW Mgmt. terminal&amp;nbsp;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="61.25" y="350" width="147.5" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="bbTCoWQHHCRtWDn3CnuV-9" target="bbTCoWQHHCRtWDn3CnuV-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-9" value="Gain access to device terminal" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="287.5" y="360" width="175" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="bbTCoWQHHCRtWDn3CnuV-11" target="bbTCoWQHHCRtWDn3CnuV-16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-11" value="&amp;nbsp;Trigger SUIT update in terminal" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="313.75" y="430" width="122.5" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="bbTCoWQHHCRtWDn3CnuV-13" target="bbTCoWQHHCRtWDn3CnuV-16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-13" value="Trigger SUIT update in terminal" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="61.25" y="430" width="147.5" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="bbTCoWQHHCRtWDn3CnuV-16" target="bbTCoWQHHCRtWDn3CnuV-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-16" value="Devices fetches and validates manifest" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="510" width="147.5" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-41" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="bbTCoWQHHCRtWDn3CnuV-19" target="bbTCoWQHHCRtWDn3CnuV-30">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-19" value="Processes SUIT manifest steps" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="590" width="147.5" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-21" value="Update successful" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="52.5" y="680" width="147.5" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-37" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" target="bbTCoWQHHCRtWDn3CnuV-25">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="273.75" y="740" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" target="bbTCoWQHHCRtWDn3CnuV-25">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="273.79999999999995" y="810" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-43" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="bbTCoWQHHCRtWDn3CnuV-30" target="bbTCoWQHHCRtWDn3CnuV-21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-44" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="bbTCoWQHHCRtWDn3CnuV-30" target="bbTCoWQHHCRtWDn3CnuV-34">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-30" value="Any failed Steps?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="233.75" y="670" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-34" value="Update failed" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="347.5" y="680" width="147.5" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-45" value="No" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="190" y="680" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="bbTCoWQHHCRtWDn3CnuV-46" value="Yes" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="300" y="680" width="60" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
