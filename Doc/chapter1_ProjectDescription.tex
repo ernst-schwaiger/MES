@@ -29,7 +29,6 @@ On the client system, both the encrypted firmware and the encrypted key and sign
 
 \paragraph{Open Topics}
 \begin{itemize}
-    \item The key for signing the package on the build system should directly be created on the token to prevent it being copied around.
-    \item Shall DTLS/CoAPS/OSCORE be used for securing communication between Clients and FW Manager? Is encrypting the payload sufficient?
+    \item Shall DTLS/CoAPS/OSCORE be used for securing communication between Clients and FW Manager? -> No security protocol is used. All data to be protected is encrypted/signed manually
 \end{itemize}
 
