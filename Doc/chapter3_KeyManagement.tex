@@ -1,10 +1,429 @@
-\section{Key Management}
-\label{KeyManagement}
+\section{
+Key Management
+}\label{sec:keyManagement}
 
-This is a stub section.
+\paragraph{} The key management section defines which cryptographic keys exist, how these are generated, stored, distributed, and how the revocation and issuance are managed. With the main focus on ensuring that only authentic firmware updates are accepted and that confidentiality of these images and their respective update keys are preserved.
 
-\subsection{Stub Subsection}
-This is a stub sub section.
+\paragraph{} The key management design distinguishes between the following main actors:
 
-\paragraph{}
-This is a stub paragraph.
+\begin{itemize}
+    \item Root Certification Authority (Root CA)
+    \item Build System
+    \item Firmware Management Server
+    \item Client Nodes  
+\end{itemize}
+
+\paragraph{} The following subsection cover the topics of key types, key generation, key storage, key distribution and ending with the management along their lifecycle-span.
+
+
+\subsection{
+Key Types and Roles
+}\label{subsec:keyTypesAndRoles}
+
+\paragraph{} The defined system will be limited to a small set of well defined key types, with clearly assigned purpose and owner for each key type.
+
+
+\subsubsection{
+Root Certification Authority key pair
+}\label{subsubsec:rootCertificationAuthorityKeyPair}
+
+
+\begin{itemize}
+    \item Type: Asymmetric key pair for a Certification Authority, for example Ed25519.
+    \item Owner: Root Certification Authority, operated offline.
+    \item Role:
+    \begin{itemize}
+        \item Signs the Build\_Signing certificate that is used on the Build System.
+        \item Signs the Mgmnt\_Signing certificate that is used on the Firmware Management Server.
+    \end{itemize}
+    \item Properties:
+    \begin{itemize}
+        \item Self-signed and never used directly for firmware signatures.
+        \item Stored offline and only used to issue or revoke subordinate certificates.
+    \end{itemize}
+\end{itemize}
+
+
+\subsubsection{
+Build System signing key pair (Build\_Signing)
+}\label{subsubsec:buildSystemSigningKeyPair}
+
+
+\begin{itemize}
+    \item Type: Asymmetric signing key pair, Ed25519.
+    \item Owner: Build System.
+    \item Role:
+    \begin{itemize}
+        \item Signs firmware update packages that are produced by the Build System before they are transferred to the Firmware Management Server.
+        \item Proves that a firmware update originated from an authorised maintainer.
+    \end{itemize}
+    \item Properties:
+    \begin{itemize}
+        \item The private key is stored on a hardware crypto token as described in Section~4.1.
+        \item The corresponding certificate is signed by the Root CA and installed on the Firmware Management Server.
+        \item The certificate is used on the server side to verify signatures on received firmware update packages.
+    \end{itemize}
+\end{itemize}
+
+
+\subsubsection{
+Firmware Management Server signing key pair (Mgmnt\_Signing)
+}\label{subsubsec:firmwareManagementServerSigningKeyPair}
+
+
+\begin{itemize}
+    \item Type: Asymmetric signing key pair, Ed25519.
+    \item Owner: Firmware Management Server.
+    \item Role:
+    \begin{itemize}
+        \item Signs SUIT update packages and the associated data that is transmitted to the clients, including the pair $(Q_E, C)$ from the ECIES encryption of the session key $K_{\text{enc}}$ (see Section~4.5).
+        \item Provides integrity and authenticity of firmware updates from the Firmware Management Server towards the Client Nodes.
+    \end{itemize}
+    \item Properties:
+    \begin{itemize}
+        \item The corresponding certificate is signed by the Root CA.
+        \item The certificate or its public key is installed on all Client Nodes as a trust anchor for firmware updates.
+        \item The private key is kept in a protected key store on the Firmware Management Server.
+    \end{itemize}
+\end{itemize}
+
+
+\subsubsection{
+Client node key pairs
+}\label{subsubsec:clientNodeKeyPairs}
+
+
+\begin{itemize}
+    \item Type: Asymmetric key pair for Elliptic Curve Diffie Hellman based on Curve25519 or a similar curve that is supported by the RIOT-OS crypto library C25519. The key pair is denoted $(d_R, Q_R)$ in Section~4.5.
+    \item Owner: Individual Client Node.
+    \item Role:
+    \begin{itemize}
+        \item Acts as the long term key pair for the ECIES scheme used to protect the AES session key $K_{\text{enc}}$ that encrypts the firmware image.
+        \item The public key $Q_R$ is known to the Firmware Management Server and is used there as the receiver key for ECIES.
+    \end{itemize}
+    \item Properties:
+    \begin{itemize}
+        \item The private key $d_R$ remains on the Client Node and is never sent over the network.
+        \item The public key $Q_R$ is uploaded to the Firmware Management Server during an onboarding or provisioning step.
+    \end{itemize}
+\end{itemize}
+
+
+\subsubsection{
+Ephemeral ECIES key pairs
+}\label{subsubsec:ephermalECIESKeyPairs}
+
+
+\begin{itemize}
+    \item Type: Ephemeral Elliptic Curve key pair $(d_E, Q_E)$ generated for each client and for each firmware update, as described in Section~4.5.
+    \item Owner: Firmware Management Server.
+    \item Role:
+    \begin{itemize}
+        \item Used to derive a per client shared secret $S = d_E \cdot Q_R$ from which the wrapper key $K_{\text{wrap}}$ is derived by HKDF.
+        \item Provides forward secrecy for $K_{\text{enc}}$ with respect to a passive attacker observing the network.
+    \end{itemize}
+    \item Properties:
+    \begin{itemize}
+        \item Generated freshly for each update and each client.
+        \item Private part $d_E$ is not stored persistently and is erased after completion of the encryption step.
+    \end{itemize}
+\end{itemize}
+
+
+\subsubsection{
+Symmetric session keys
+}\label{subsubsec:symmetricSessionKeys}
+
+
+\paragraph{} The system uses symmetric keys only as short lived session keys.
+
+\begin{itemize}
+    \item AES firmware encryption key $K_{\text{enc}}$:
+    \begin{itemize}
+        \item Type: Symmetric key for the Advanced Encryption Standard in Cipher Block Chaining mode.
+        \item Owner: Firmware Management Server during update processing; Client Nodes after decryption.
+        \item Role:
+        \begin{itemize}
+            \item Encrypts the SUIT firmware package before transmission.
+            \item Prevents unauthorised parties from learning the firmware content from intercepted traffic.
+        \end{itemize}
+        \item Properties:
+        \begin{itemize}
+            \item Generated randomly for every new firmware update version.
+            \item Not reused across different firmware versions.
+        \end{itemize}
+    \end{itemize}
+    \item Wrapper key $K_{\text{wrap}}$:
+    \begin{itemize}
+        \item Type: Symmetric key derived from the shared secret $S$ using HKDF as described in Section~4.5.
+        \item Owner: Firmware Management Server and corresponding Client Node.
+        \item Role:
+        \begin{itemize}
+            \item Encrypts and decrypts the AES session key $K_{\text{enc}}$.
+        \end{itemize}
+        \item Properties:
+        \begin{itemize}
+            \item Not stored persistently.
+            \item Recomputed by both parties when needed during the update protocol.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+
+\subsection{
+Key Generation
+}\label{subsec:keyGeneration}
+
+\paragraph{} Key generation must use cryptographically secure random numbers and must be reproducible as a process, but not in terms of output. The following generation procedure is used.
+
+
+\subsubsection{
+Root CA and certificate keys
+}\label{subsubsec:rootCAAndCertificateKeys}
+
+\paragraph{} The Root CA and the two signing key pairs are generated once during system initialisation.
+
+\begin{enumerate}
+    \item Generate a Root CA key pair on a secure, offline machine using an Ed25519 capable tool chain.
+    \item Create a self-signed Root CA certificate that identifies the authority and contains the Root CA public key.
+    \item On the Build System, generate an Ed25519 key pair for the Build\_Signing certificate. Export only the public key.
+    \item On the Firmware Management Server, generate an Ed25519 key pair for the Mgmnt\_Signing certificate. Export only the public key.
+    \item On the Root CA machine, issue two certificates: one for the Build\_Signing key and one for the Mgmnt\_Signing key. Both certificates are signed with the Root CA key.
+    \item Install the Root CA certificate and the Build\_Signing certificate on the Firmware Management Server. Install the Root CA certificate and the Mgmnt\_Signing certificate on all Client Nodes.
+\end{enumerate}
+
+
+\subsubsection{
+Client node key pairs
+}\label{subsubsec:clientNodeKeyPairs}
+
+
+\paragraph{} Client keys are generated during provisioning of each device.
+
+\begin{enumerate}
+    \item During manufacturing or first boot, the Client Node generates a Curve25519 compatible key pair $(d_R, Q_R)$ using the RIOT-OS random number generator or a hardware random number generator if available.
+    \item The private key $d_R$ is stored only in non volatile memory on the Client Node and is marked as secret.
+    \item The public key $Q_R$ is exported over a trusted channel to the Firmware Management Server or to a provisioning station that forwards it to the Firmware Management Server.
+    \item The Firmware Management Server stores $Q_R$ in a database entry that is associated with the identity of the Client Node, for example a serial number.
+\end{enumerate}
+
+
+\subsubsection{
+Session key $K_{\text{enc}}$ and ephemeral ECIES keys
+}\label{subsubsec:sesseionKeyAndEphemeralECIESKeys}
+
+
+\paragraph{} For each firmware update version the Firmware Management Server generates a new AES session key $K_{\text{enc}}$ as part of the processing described in Section~4.2.
+
+\begin{enumerate}
+    \item When a new firmware update arrives and has been verified, the Firmware Management Server generates a random AES key $K_{\text{enc}}$ of suitable length, for example one hundred and twenty eight bits. The key is derived from a secure random source provided by the operating system, for example \texttt{/dev/urandom}.
+    \item For each Client Node that will receive the update, the Firmware Management Server generates a fresh ephemeral ECC key pair $(d_E, Q_E)$.
+    \item For each Client Node the Firmware Management Server computes the shared secret $S = d_E \cdot Q_R$, derives $K_{\text{wrap}}$ from $S$ via HKDF, and encrypts $K_{\text{enc}}$ to obtain $C$, as described in Section~4.5.
+    \item After completion of the encryption and storage of $(Q_E, C)$, the ephemeral private keys $d_E$ are securely erased from memory.
+\end{enumerate}
+
+
+\subsection{
+Key Storage
+}\label{subsec:keyStorage}
+
+
+\paragraph{} Secure key storage is essential because compromise of long term keys undermines the entire update scheme. The storage concept is separated by component.
+
+
+\subsubsection{
+Build System
+}\label{subsubsec:buildSystem}
+
+
+\begin{itemize}
+    \item Build\_Signing private key:
+    \begin{itemize}
+        \item Stored exclusively on a hardware crypto token.
+        \item The token is protected by a personal identification number that is known only to the person responsible for building and signing firmware.
+        \item The private key never leaves the token in plain form. All signature operations are executed on the token.
+    \end{itemize}
+    \item Root CA certificate:
+    \begin{itemize}
+        \item Stored as a trust anchor file for verification on the Firmware Management Server, not on the Build System itself.
+        \item Optionally stored read only on the Build System for documentation.
+    \end{itemize}
+\end{itemize}
+
+
+\subsubsection{
+Firmware Management Server
+}\label{subsubsec:firmwareManagementServer}
+
+
+\begin{itemize}
+    \item Mgmnt\_Signing private key:
+    \begin{itemize}
+        \item Stored in a protected key store on the server host.
+        \item Access limited to the firmware management service process, with restrictive file system permissions.
+        \item Optionally additionally protected by a software based key encryption mechanism that requires a passphrase at service start.
+    \end{itemize}
+    \item Root CA certificate and subordinate certificates:
+    \begin{itemize}
+        \item Stored in a dedicated directory that is read only for the firmware management process.
+        \item Used to verify the Build\_Signing certificate during the verification of incoming firmware updates.
+    \end{itemize}
+    \item Client public keys $Q_R$:
+    \begin{itemize}
+        \item Stored in a database or configuration file that maps each Client Node identity to its public key.
+        \item Access controlled so that only the firmware management process can read this information.
+    \end{itemize}
+    \item Session keys:
+    \begin{itemize}
+        \item $K_{\text{enc}}$, $K_{\text{wrap}}$, and ephemeral private keys $d_E$ are kept only in volatile memory for the duration of an update processing run.
+        \item These keys are overwritten in memory as soon as no longer needed and are not written to persistent storage.
+    \end{itemize}
+\end{itemize}
+
+
+\subsubsection{
+Client Nodes
+}\label{subsubsec:clientNodes}
+
+
+\begin{itemize}
+    \item Long term private key $d_R$:
+    \begin{itemize}
+        \item Stored in non volatile memory that is not externally readable over the normal communication interfaces.
+        \item Access restricted to the firmware update component that performs ECIES decryption.
+        \item If supported by the hardware, placed in a dedicated secure storage region.
+    \end{itemize}
+    \item Public keys and trust anchors:
+    \begin{itemize}
+        \item Root CA certificate and the Mgmnt\_Signing certificate or its public key are stored in read only memory together with the firmware or in a dedicated configuration section.
+        \item Updates to these certificates are only accepted as part of a signed firmware update process.
+    \end{itemize}
+\end{itemize}
+
+
+\subsection{
+Key Distribution and Provisioning
+}\label{subsec:keyDistribution}
+
+
+\paragraph{} Key distribution defines how keys reach the respective parties in a trustworthy way.
+
+
+\subsubsection{
+Initial provisioning phase
+}\label{subsubsec:initialProvisioningPhase}
+
+
+\paragraph{} During initial provisioning the following steps take place.
+
+\begin{enumerate}
+    \item The Root CA certificate is embedded into the Client Node firmware image or written into a dedicated read only configuration partition.
+    \item The Mgmnt\_Signing certificate is installed on the Client Nodes as part of the initial firmware image.
+    \item Each Client Node generates its long term key pair $(d_R, Q_R)$ locally as described in Section~3.2.2.
+    \item The public key $Q_R$, together with an identifier for the Client Node, is transmitted over a secure provisioning channel to the Firmware Management Server.
+    \item The Firmware Management Server stores the mapping from device identity to $Q_R$ in its client database.
+\end{enumerate}
+
+
+\subsubsection{
+Distribution during firmware updates
+}\label{subsubsec:distributionDuringFirmwareUpdates}
+
+
+\paragraph{} During a firmware update, the following key related data is transferred.
+
+\begin{enumerate}
+    \item The Build System sends the firmware update package, the signature generated with the Build\_Signing key, and the Build\_Signing certificate to the Firmware Management Server via Secure Shell. The mutual Secure Shell trust configuration is described in Section~4.1.
+    \item The Firmware Management Server verifies the Build\_Signing certificate against the Root CA certificate and verifies the signature of the package.
+    \item After verification and after packaging of the firmware into a SUIT update, the Firmware Management Server encrypts the SUIT firmware with $K_{\text{enc}}$ and encrypts $K_{\text{enc}}$ for each Client Node as $(Q_E, C)$ using ECIES.
+    \item The Firmware Management Server signs the SUIT package and, per Client Node, the pair $(Q_E, C)$ with its Mgmnt\_Signing key.
+    \item The Client Node receives the encrypted firmware package, the pair $(Q_E, C)$, and the signature. The Client Node verifies the signature against the stored Mgmnt\_Signing public key, computes $K_{\text{wrap}}$ using its private key $d_R$ and the received $Q_E$, recovers $K_{\text{enc}}$, and decrypts the firmware.
+\end{enumerate}
+
+
+\subsection{
+Key Lifetime, Rotation, and Revocation
+}\label{subsec:keyLifetimeRotationAndRevocation}
+
+
+\paragraph{} Key lifetime management ensures that cryptographic material does not remain in use beyond reasonable time frames and that compromised keys can be withdrawn from service.
+
+
+\subsubsection{
+Key lifetime and rotation
+}\label{subsubsec:keyLifetimeAndRotation}
+
+
+\paragraph{} The following lifetimes are proposed.
+
+\begin{itemize}
+    \item Root CA key pair:
+    \begin{itemize}
+        \item Long lifetime, for example ten years.
+        \item Only used to sign subordinate certificates and to issue revocations.
+    \end{itemize}
+    \item Build\_Signing key pair:
+    \begin{itemize}
+        \item Medium lifetime, for example two to three years.
+        \item When rotated, a new Build\_Signing key pair and certificate are generated and signed by the Root CA.
+        \item The Firmware Management Server is updated to trust both the old and the new Build\_Signing certificate for a transition period.
+    \end{itemize}
+    \item Mgmnt\_Signing key pair:
+    \begin{itemize}
+        \item Medium lifetime similar to the Build\_Signing key pair.
+        \item When rotated, the new certificate is distributed to Client Nodes as part of a signed firmware update.
+        \item The SUIT manifest can carry an identifier of the signing key to support coexistence of old and new keys during transition.
+    \end{itemize}
+    \item Client node key pairs $(d_R, Q_R)$:
+    \begin{itemize}
+        \item Long lifetime constrained by the physical lifetime of the device.
+        \item Optional periodic regeneration can be implemented by sending a special key update command from the Firmware Management Server, followed by an authenticated upload of the new public key $Q_R$.
+    \end{itemize}
+    \item Symmetric session keys $K_{\text{enc}}$ and $K_{\text{wrap}}$:
+    \begin{itemize}
+        \item Very short lifetime.
+        \item Created per firmware version and per client interaction and discarded immediately after use.
+    \end{itemize}
+\end{itemize}
+
+
+\subsubsection{
+Revocation and compromise handling
+}\label{subsubsec:revocationAndCompromiseHandling}
+
+
+\paragraph{} The scheme needs simple but practical steps to handle key compromise.
+
+\begin{itemize}
+    \item Compromise of Build\_Signing key:
+    \begin{itemize}
+        \item The Root CA issues a revocation record for the affected Build\_Signing certificate.
+        \item The Firmware Management Server is updated to reject firmware packages that are signed with the revoked certificate.
+        \item A new Build\_Signing key and certificate are generated and installed.
+    \end{itemize}
+    \item Compromise of Mgmnt\_Signing key:
+    \begin{itemize}
+        \item A new Mgmnt\_Signing key pair and certificate are generated and signed by the Root CA.
+        \item A special emergency firmware update is created that is signed with both the old and the new Mgmnt\_Signing key. The clients still trusting the old certificate install the update and record the new certificate as trusted.
+        \item After this transition, further updates are signed only with the new Mgmnt\_Signing key.
+    \end{itemize}
+    \item Compromise of a Client Node key $d_R$:
+    \begin{itemize}
+        \item The Firmware Management Server marks the corresponding Client Node as compromised and stops sending encrypted updates to this device under the old key.
+        \item If physical access to the device is possible, a re provisioning process can install a new key pair and restore operation.
+        \item If re provisioning is not possible, the device is considered permanently untrusted.
+    \end{itemize}
+\end{itemize}
+
+
+\subsection{
+Summary
+}\label{subsec:summary}
+
+\paragraph{} This proposed key management design has a complete set of keys with clearly separated roles between the individual components at play. Long term signing keys are protected by hardware tokens or protected key stores. Client Nodes hold long term Elliptic Curve key pairs and trust anchors for the Firmware Management Server. Short lived session keys provide confidentiality for firmware images and are generated freshly for each update. Key rotation and simple revocation rules complete the scheme and provide a realistic and implementable basis for the Secure Firmware Update Over The Air process described in Sections~2 and~4.
+
+
+
+
+
+
