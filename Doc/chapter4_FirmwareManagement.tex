@@ -18,15 +18,16 @@ The firmware update is delivered to the Firmware Management Server using \texttt
 On the Firmware Management Server, a process is cyclically polling for firmware update packages. Once a package arrives it executes the following steps
 
 \begin{enumerate}[label*=\arabic*.]
- 	\item Verification of certificate
- 	\item Verification of signature using certificate
+ 	\item Verification of certificate against root certificate
+ 	\item Verification of signature using verified certificate
  	\item Generation of Manifest file of firmware update using the enclosed meta data
- 	\item Packaging firmware update and manifest for delivery via texttt{SUIT}
+ 	\item Packaging firmware update and manifest for delivery via \texttt{SUIT}
  	\item Generation of AES key for encryption of firmware update package
- 	\item Encryption of firmware package using the AES key
- 	\item Signing firmware package and AES key using Firmware Management Server private key
- 	\item For all nodes which shall receive the update: Encryption firmware package and the AES key using the public key of the nodes
- 	\item Store Encrypted firmware package and AES key, together with signature in a delivery folder for each client node
+ 	\item Encryption of firmware package using the AES key $K_enc$
+ 	\item Store encrypted firmware package on file system with meta data
+ 	\item For every client: Create ephemeral ECC key pair for encrypting $K_enc$, create $(Q_E, C)$, see \ref{sec:dataEncryption}
+ 	\item For every client: Sign firmware package and $(Q_E, C)$ using Firmware Management Server private key
+	\item For every client: Store $(Q_E, C)$ and signature on the file system
 \end{enumerate}
 
 \subsection{Client Node}
@@ -72,7 +73,7 @@ For the encryption of the AES key $K_{enc}$, which was used to encrypt the firmw
 
 \subsection{Data Encoding Scheme}
 
-Figure \ref{fig:dataEncoding} shows the principle of the employed data encoding scheme. A piece of data can consist of one or more binary fields, each with a distinct byte length. The first byte of the data identifies the type of the data (e.g. "encrypted firmware update with encrypted key and signature" := 0x01).The next byte contains the number of fields $n$ that are following. Thereafter $n$ two-byte, big endian length fields follow, each providing the byte length of one field. Thereafter, the data of the payload fields follows. The encoding example on the right hand side assumes for simplicity that the length of all fields is a multiple of eight bytes. The field type \texttt{0x01} identifies a firmware update package. The first field contains the firmware itself, encrypted by $K_{enc}$. The second field contains $(Q_E, C)$, which is the encrypted AES key $K_{wrap}$, which decrypts $K_{enc}$, see subsection \ref{sec:dataEncryption}.
+Figure \ref{fig:dataEncoding} shows the principle of the employed data encoding scheme. A piece of data can consist of one or more binary fields, each with a distinct byte length. The first byte of the data identifies the type of the data (e.g. "request firmware update" := 0x00, "encrypted firmware update with encrypted key and signature" := 0x01, ...). The next byte contains the number of fields $n$ that are following. Thereafter $n$ two-byte, big endian length fields follow, each providing the byte length of one field. Thereafter, the data of the payload fields follows. 
 
 \begin{figure}[h]
 	\centering
@@ -80,3 +81,6 @@ Figure \ref{fig:dataEncoding} shows the principle of the employed data encoding 
 	\caption{System Description}
 	\label{fig:dataEncoding}
 \end{figure}
+
+\paragraph{}
+The encoding example on the right hand side assumes for simplicity that the length of all fields is a multiple of eight bytes. The field type \texttt{0x01} identifies a firmware update package. The first field contains the firmware itself, encrypted by $K_{enc}$. The second field contains $(Q_E, C)$, which is the encrypted AES key $K_{wrap}$, which decrypts $K_{enc}$, see subsection \ref{sec:dataEncryption}.
