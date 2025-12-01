@@ -1,5 +1,8 @@
 # EUCLEAK  CVE-2024-45678
 
+Students: Stefan Ohnewith, Ernst Schwaiger
+
+
 ## 1. Explain the core vulnerability 
 >exploited in the EUCLEAK attack and why it remained undetected for over a decade despite numerous Common Criteria (CC) evaluations.
 

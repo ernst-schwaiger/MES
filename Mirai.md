@@ -1,9 +1,11 @@
 # Mirai Botnet
 
+Students: Stefan Ohnewith, Ernst Schwaiger
+
 ## 1. Inspect  mirai/cnc/main.go  and  mirai/bot/table.c 
 >a) Which listening port does the CNC use by default?
 
-The default listening port for the CNC is 13 (Telnet) which is shared with Bots. If the remote node sends three zero bytes, this indicates a bot, if not, the cnc client tries to connect. In addition to that, the CNC server also provides an API port 100, where clients with valid api key can schedule custom attacks.
+The default listening port for the CNC is 13 (Telnet) which is shared with Bots. If the remote node sends three zero bytes, this indicates a bot, if not, the cnc client tries to connect. In addition to that, the CNC server also provides an API port 100, where "clients" with valid api key can schedule custom attacks.
 
 >b) What are the security implications of hard-coded DB creds and bind addresses in cnc/main.go ?
 
@@ -181,7 +183,6 @@ void attack_gre_ip(uint8_t targs_len, struct attack_target *targs, uint8_t opts_
 ```
 
 In order to defend against this attack, a function can be implemented which extracts the attackers PRNG state from attack packets. If one single attack packet reveals enough information to reconstruct the PRNG state, all subsequent attacks are known ahead of time, and can be blocked at the ingress firewall. If multiple attack packets are needed for that, the defender has to have a way of determining which attack packets come from the same attacking node.
-the first few attack packets, then (knowing ahead of time their content), blocking subsequent attack packets at the ingress firewall, or even earlier, by an ISP. 
 
 The two defense mechanisms, however, only work if there is one single scanning/attacking node. If there are several hundreds/thousands of attacking nodes, it will be difficult to determine which packet came from which scanning/attacking node (each node has its individual random number sequence).
 
@@ -239,9 +240,10 @@ int connection_consume_arch(struct connection *conn)
 }
 ```
 
-If `TOKEN_RESPONSE` is not found in `conn->rdbuf`, `util_memsearch()` returns `-1`, and the first `if` branch is not taken. In that case, `connection_consume_arch()` returns `0`, leaving the state machine in the ``TELNET_DETECT_ARCH` state. Unless our bot stops sending packets to the server, the server is stuck in the state. The sequence below shows how to exploit the bug:
+If `TOKEN_RESPONSE` is not found in `conn->rdbuf`, `util_memsearch()` returns `-1`, and the first `if` branch is not taken. In that case, `connection_consume_arch()` returns `0`, leaving the state machine in the `TELNET_DETECT_ARCH` state. Unless our bot stops sending packets to the server, the server is stuck in the state. The sequence below shows how to exploit the bug:
 
 ```c
+/* POC for keeping the MIRAI loader occupied with one single bot, so it can't harm others */
 int bot_from_hell(int fd, uint8_t *pBuf, size_t bufsize, int flags)
 {
     static uint8_t idx = 0;
@@ -253,19 +255,19 @@ int bot_from_hell(int fd, uint8_t *pBuf, size_t bufsize, int flags)
     };
 
     #define STR_WITH_LEN(S) {S, strlen(S)}
-
+    /* List of replies to sent to the mirai loader so it is stuck in the TELNET_DETECT_ARCH state */
     static struct bot_from_hell_msg_t msgs[] = 
     {
         STR_WITH_LEN("\xff\xff\xfflogin:"),
         STR_WITH_LEN("password:"),
         STR_WITH_LEN(":)>"), // prompt after login
-        STR_WITH_LEN("(:>"), // promt after mirai opened a shell :)
+        STR_WITH_LEN("(:>"), // prompt after mirai opened a shell :)
         STR_WITH_LEN(TOKEN_RESPONSE), // after busybox call
         STR_WITH_LEN("arbitrary_ps_output 42" TOKEN_RESPONSE), // mirai looks for other bots in the victim machine
         STR_WITH_LEN("\n/your_rw_folder /dev/null someopt rw\n" TOKEN_RESPONSE), // give mirai a folder to write to :)
         STR_WITH_LEN("whatever " VERIFY_STRING_CHECK " foo " TOKEN_RESPONSE),   // and it was successful, ofc 
         STR_WITH_LEN("yes, cp works" TOKEN_RESPONSE),  // cp also works
-        // fake ELF header, porviding X86_64 Little Endian architecture
+        // fake ELF header, providing X86_64 Little Endian architecture
         {"\x7f" "ELF" "\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x3e\x00\x01\x00\x00\x00", 24},
         STR_WITH_LEN("gotcha :)") // sending e.g. this string at least once all 10 secs will keep one worker thread busy
     };
@@ -281,11 +283,6 @@ int bot_from_hell(int fd, uint8_t *pBuf, size_t bufsize, int flags)
     return bytesFromBot;
 }
 ```
-
-
-
-
-
 
 # 5. Why is the software (Mirai) lost after a reboot?
 
@@ -307,7 +304,7 @@ Botnets derived from Mirai added these features
 
 >What is the most dangerous improvement in your opinion?
 
-IMHO the most dangerous property of the Hajime and Mozi botnets is that they operate as a peer-to-peer network. Thereby it is not possible any more to destroy a botnet by taking out one central server bot. In peer-to-peer networks, every bot can take over the role of the command and control server.
+In our opinion, the most dangerous property of the Hajime and Mozi botnets is that they operate as a peer-to-peer network. Thereby it is not possible any more to destroy a botnet by taking out one central server bot. In peer-to-peer networks, every bot can take over the role of the command and control server.
 
 >Is it still active today? 
 
