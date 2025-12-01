@@ -22,37 +22,17 @@ On the Firmware Management Server, a process is cyclically polling for firmware 
  	\item Verification of signature using verified certificate
  	\item Generation of Manifest file of firmware update using the enclosed meta data
  	\item Packaging firmware update and manifest for delivery via \texttt{SUIT}
- 	\item Generation of AES key for encryption of firmware update package
- 	\item Encryption of firmware package using the AES key $K_enc$
+ 	\item Generation of AES key $K_{enc}$ for encryption of firmware update package
+ 	\item Encryption of firmware package using the AES key $K_{enc}$
  	\item Store encrypted firmware package on file system with meta data
- 	\item For every client: Create ephemeral ECC key pair for encrypting $K_enc$, create $(Q_E, C)$, see \ref{sec:dataEncryption}
+ 	\item For every client: Create ephemeral ECC key pair for encrypting $K_{enc}$, create $(Q_E, C)$, see \ref{sec:dataEncryption}
  	\item For every client: Sign firmware package and $(Q_E, C)$ using Firmware Management Server private key
 	\item For every client: Store $(Q_E, C)$ and signature on the file system
 \end{enumerate}
 
 \subsection{Client Node}
 
-When the \texttt{user button SW0} on the client node is pressed, the node initiates a firmware update by sending a request to the Firmware Management Server, enclosing its currently installed firmware version. After that request arrives at the server, it verifies if the newest firmware update has a newer version than the one sent by the client. If this is the case, the firmware update process starts.
-
-\subsection{6LoWPAN Transport Layer}
-
-\paragraph{}
-Figure \ref{fig:transportLayer} shows an example of a minimum transport layer for the transmission of data which exceeds the payload length of a single 6LoWPAN frame.
-
-\paragraph{FF/First Frame}: A \texttt{FF} starts the transmission of data. It which consists of a header and a payload part. The header has a length of two bytes. The two most significant bits of the first byte are set to \texttt{00}, indicating a \texttt{FF}. Bits 5..0 of the first byte and bits 7..0 of the second byte provide the length of the transmitted payload, in units of four byte chunks. The transport layer thus suppors the transmission of up to 64 kBytes: $(2^{14}) \cdot 4 = 65536$. If the total number of bytes is not divisible by four, the unused bytes at the end are padded with \texttt{0xff} bytes. This frame is sent by the sender to start the transmission of data, enclosing the first bytes of the data.
-
-\paragraph{CTS/Clear To Send Frame} Upon the reception of a \texttt{FF}, the receiver node replies with a \texttt{CTS} frame, indicating that the sender may continue to send data. The two most significant bits of the first byte are set to \texttt{01} indicating a \texttt{CTS}. Bit 5 indicates the receiver status, \texttt{0} conveying OK, \texttt{1} indicating an error during the reception of the previous frames. Bits 4..0 and byte 1 indicate a block index, which is set to zero in the first transmission. A \texttt{CTS} frame is also sent by the receiver after the data transmission was complete. If Bit 5 is cleared, the block index is set to zero. If Bit 5 is set, the block index indicates the index of the first \texttt{CF} that could not be received and which the sender shall retransmit.
-
-\paragraph{CF} After the reception of a \texttt{CTS}, the sender continues transmission using \texttt{CF}s. The two most significant bits of the first byte are set to \texttt{10} indicating a Consecutive frame. Bits 0..4 and byte 1 hold a zero-based index of the sent data block. i.e. a transmission may consist of at most $2^{15}$ \texttt{CF}s. If the previous \texttt{CTS} indicated a reception error on a given index, the sender repeats transmission from that index and awaits a new \texttt{Clear To Send} after the last \texttt{Consecutive Frame} of the block was sent.
-
-\paragraph{} The interaction diagram shows an example transmission of 1150 bytes, starting with a \texttt{FF} indicating 288 * 4 bytes = 1152 bytes of payload will be sent. The additional two bytes will be padded with \texttt{0xff} bytes at the end. After the header, the first bytes of the complete payload are appended. On the assumption that 127 bytes are available, the payload in the \texttt{FF} has a length of 125 bytes. The receiver node replies with a \texttt{CTS} with cleared status bit. The sender continues to send payload with \texttt{CF} frames using the indices 0..7, each transmitting 125 additional payload bytes. The \texttt{CF} with index 8 transmits the last chunk of data, 27 bytes. The two bytes at the end are padding data. After the reception of the \texttt{CF} with index 8 (or after a timeout elapses), the receiver transmits a \texttt{CTS} indicating an error on the \texttt{CF} with index 7. The sender retransmits the \texttt{CF} frames 7..8 and awaits a new \texttt{CTS}. This time, the \texttt{CTS} indicates success.
-
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=0.8\textwidth]{images/Transport.drawio}
-	\caption{System Description}
-	\label{fig:transportLayer}
-\end{figure}
+FIXME: Describe how the client nodes will obtain firmware updates
 
 \subsection{Encryption Scheme for $K_{enc}$}
 \label{sec:dataEncryption}
@@ -69,18 +49,3 @@ For the encryption of the AES key $K_{enc}$, which was used to encrypt the firmw
  	\item The receiver generates the wrapper key like the sender
  	\item The receiver decrypts $K_{enc}$ using  $K_{enc} := D(K_{wrap}, C)$
 \end{enumerate}
-
-
-\subsection{Data Encoding Scheme}
-
-Figure \ref{fig:dataEncoding} shows the principle of the employed data encoding scheme. A piece of data can consist of one or more binary fields, each with a distinct byte length. The first byte of the data identifies the type of the data (e.g. "request firmware update" := 0x00, "encrypted firmware update with encrypted key and signature" := 0x01, ...). The next byte contains the number of fields $n$ that are following. Thereafter $n$ two-byte, big endian length fields follow, each providing the byte length of one field. Thereafter, the data of the payload fields follows. 
-
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=0.8\textwidth]{images/DataEncoding.drawio}
-	\caption{System Description}
-	\label{fig:dataEncoding}
-\end{figure}
-
-\paragraph{}
-The encoding example on the right hand side assumes for simplicity that the length of all fields is a multiple of eight bytes. The field type \texttt{0x01} identifies a firmware update package. The first field contains the firmware itself, encrypted by $K_{enc}$. The second field contains $(Q_E, C)$, which is the encrypted AES key $K_{wrap}$, which decrypts $K_{enc}$, see subsection \ref{sec:dataEncryption}.
