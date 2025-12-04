@@ -17,7 +17,7 @@ In our case this project's configuration may look like this:
 \textbf{Note:} Although, the devices are serially connected to the device hosting the IPv6 network this way, the update still remains over-the-air as IPv6 packets are exchanged.
 
 \paragraph{Firmware:}
-The firmware must encrypted and signed on the firmware management server and later decrypted by the host devices that process and execute the update.
+The firmware must be encrypted and signed on the firmware management server and later decrypted by the host devices that process and execute the update.
 The encryption is done with existing implementations of RIOT-OS' Crypto library.
 % This is my suggestion to not overcomplicate this and justification is also there
 In this case, the algorithm chosen is CBC due to its simplicity and provides confidentiality.
@@ -26,7 +26,7 @@ The signature algorithm used is Ed25519 since RIOT-OS provides the cryptographic
 
 \paragraph{Process}
 To update the firmware, the SUIT procedure is used where the manifest and the encrypted and signed firmware are uploaded onto the firmware management server. The build process is explained in \ref{FirmwareManagement}.
-The hosts uses the manifest to execute the necessary steps to flash the device with the new firmware image.
+The host uses the manifest to execute the necessary steps to flash the device with the new firmware image.
 Fetching the necessary data such as the SUIT manifest or the encrypted firmware relies on CoAP with the library nanoCoaP.
 Figure \ref{fig:suit} shows how an update can be triggered.
 

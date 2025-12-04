@@ -99,6 +99,12 @@ See also:
 
 ## Open Topics
 
+- Decision on whether to send the Build System Certificate along with the firmware update package or not.
+- IoT Security: As discussed in the session on November 30th, the update will only be an triggered by the FW Management server. No request from the Client nodes. (Update Figure 2?)
+- Which parts of the data transferred from FW management server to the Client nodes must be encrypted and/or signed, which data must be in the clear so CoAP/SUIT can handle it? Should be described somewhere.
+- {subsubsec:clientNodeKeyPairs} is defined twice in chap 3.
+- Initial long term key pair provision: By device, or by Build System?
+
 Use of smartcard reader security token: Flash ssh key onto card/token. FW Manager only accepts new software if expected ssh key was provided to FW Manager (via Smartcard or security token).
 
 Which Buster version to use for a working IEEE 802.15.4 and 6LoWPAN stack? I used this one:

@@ -1,7 +1,7 @@
 \section{Project description}
 \label{ProjectDescription}
 
-The Project description section provides a brief overview of the project, covering the basic idea with simple sketches for visualization.
+This section provides a brief overview of the project, covering the basic idea with simple sketches for visualization.
 
 \subsection{Problem description}
 
@@ -22,14 +22,10 @@ Figure \ref{fig:system} displays an overview of the system. A self-signed \emph{
 A service on the \emph{Firmware Management Server} detects a newly arrived firmware update, verifies the validity of the \emph{Build\_Signing} certificate and the validity of the signature. The service puts the received firmware into a SUIT update package enclosing all required meta data, signs the package using its private signing key (of the \emph{Mgmnt\_Signing} certificate), then generates a session AES key, which it uses to encrypt the SUIT update package. For each \emph{Client} node it then encrypts the AES key using the \emph{Client} public key and stores it along with the package signature.
 
 \paragraph{}
-The encrypted SUIT update package can either be directly pushed to all \emph{Client} nodes via \emph{6LoWPAN} multicast or can be pulled by each client. In addition to that, the encrypted AES key and the SUIT signature are pushed/pulled to the clients using unicast communication.
+The encrypted SUIT update package, along with the encrypted AES key and the SUIT signature is then sent to all \emph{Client} nodes via \emph{6LoWPAN}.
 
 \paragraph{}
-On the client system, both the encrypted firmware and the encrypted key and signature arrive. The client first decrypts the AES key using its private key. In the next step, it decrypts the package using the AES key and verifies its validity using the received signature. If the \emph{Firmware Management Server} certificate and the decrypted SUIT update package are both valid, the client can install/flash the firmware update.
+On the client system, both the encrypted firmware and the encrypted key and signature arrive. The client verifies the validity of the \emph{Mgmnt\_Signing} certificate, then the signature of the received package using the certificate. If the verification was successful, the client first decrypts the AES key using its private key, then it decrypts the package using the AES key. In the next step, the client can install/flash the firmware update.
 
-\paragraph{Open Topics}
-\begin{itemize}
-    \item Shall DTLS/CoAPS/OSCORE be used for securing communication between Clients and FW Manager? -> No security protocol is used. All data to be protected is encrypted/signed manually
-    \item Which firmware update meta data is needed for the SUIT update, aside version number and release date?
-\end{itemize}
-
+\paragraph{}
+For the handling of certificates that either will expire soon or have been compromised, a second process takes care of replacing/revoking them on the respective Build System and \emph{Client} nodes.
