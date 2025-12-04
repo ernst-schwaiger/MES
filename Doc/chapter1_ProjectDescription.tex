@@ -9,7 +9,7 @@ The Project description section provides a brief overview of the project, coveri
 The aim of the project is to develop a system which allows to distribute newer versions of a piece of firmware onto a number of client nodes. The firmware update is created on a \emph{Build System}, then transferred to a \emph{Firmware Management Server}, which subsequently sends packages containing the updated firmware to a number of \emph{Client} nodes which are installing the updates.
 
 \paragraph{}
-Figure \ref{fig:system} displays an overview of the system. A self-signed \emph{Root/CA} certificate is used for siging a \emph{Build\_Signing} certificate which is stored together with the private key on a crypto token.  When a new firmware update package is built, it is signed using that key to prove its authenticity to the \emph{Firmware Management Server} which is receiving that package via ssh/scp.
+Figure \ref{fig:system} displays an overview of the system. A self-signed \emph{Root/CA} certificate is used for signing a \emph{Build\_Signing} certificate which is stored together with the private key on a crypto token.  When a new firmware update package is built, it is signed using that key to prove its authenticity to the \emph{Firmware Management Server} which is receiving that package via ssh/scp.
 
 \begin{figure}[h]
 	\centering

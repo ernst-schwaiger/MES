@@ -22,7 +22,7 @@ The encryption is done with existing implementations of RIOT-OS' Crypto library.
 % This is my suggestion to not overcomplicate this and justification is also there
 In this case, the algorithm chosen is CBC due to its simplicity and provides confidentiality.
 AEAD ciphers were considered, however, in this case, it is not necessary as integrity is provided by the signature.
-The signature algorithm used is Ed25519 since RIOT-OS provides the crypthographic library \textit{C25519}.
+The signature algorithm used is Ed25519 since RIOT-OS provides the cryptographic library \textit{C25519}.
 
 \paragraph{Process}
 To update the firmware, the SUIT procedure is used where the manifest and the encrypted and signed firmware are uploaded onto the firmware management server. The build process is explained in \ref{FirmwareManagement}.

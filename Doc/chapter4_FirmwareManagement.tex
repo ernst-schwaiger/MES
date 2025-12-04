@@ -4,13 +4,13 @@
 \subsection{Build System}
 
 \paragraph{Generation of a firmware update and testing}
-A firmware update, either triggered by a necessary bugfix or by a new software feature, starts by adding the necessary changes to the source code, then executing a test suite on the changed code. For bug fix releases,  regression tests are introduced which prove that the bug is not present any more and which prevent the bug from re-entering the codebase in future code changes. For new features, the test suite is extended to prove that the new feature is working.
+A firmware update, either triggered by a necessary bug fix or by a new software feature, starts by adding the necessary changes to the source code, then executing a test suite on the changed code. For bug fix releases,  regression tests are introduced which prove that the bug is not present any more and which prevent the bug from re-entering the code base in future code changes. For new features, the test suite is extended to prove that the new feature is working.
 
 \paragraph{Build and sign firmware update package to Firmware Management Server}
 After the code changes have been applied and all tests are passing, the revision in the source code control system is tagged, and the binary, along with its version meta data is built. In the context of this project, the context consists of a three-component version number \texttt{x.y.z} and a date \texttt{YY-MM-DD}. In the  next step, the binary and meta data are put into a binary archive which is in turn signed by using a dedicated key on a security token. That key belongs to a signing certificate which has been signed by a root certificate installed on the Firmware Management server, for details, refer to chapter \ref{KeyManagement}. The person in charge for security updates holds that token and plugs it in to the Build System when a firmware update is to be delivered. For accessing the key on the token, a PIN must be entered which is only known to the person holding the token. This ensures that every firmware update package can be attributed to the (trusted) person holding the security token.
 
 \paragraph{Deliver update package to Firmware Management Server}
-The firmware update is delivered to the Firmware Management Server using \texttt{ssh/scp} together with the signature and the certificate. The mutual trust between the user on the Build System and the Firmware Management Server is established as follows: The user trusts the servers host key when settting up the ssh connection for the first time (Trust on First Use/TOFU). The Firmware Management Server trusts the user due to an installed public SSH key for which the user holds the corresponding private key. That private key can be installed on the same security token as the one for signing the firmware update package, or on a different token in case the tasks of signing and transferring the update is done by different persons.
+The firmware update is delivered to the Firmware Management Server using \texttt{ssh/scp} together with the signature and the certificate. The mutual trust between the user on the Build System and the Firmware Management Server is established as follows: The user trusts the servers host key when setting up the ssh connection for the first time (Trust on First Use/TOFU). The Firmware Management Server trusts the user due to an installed public SSH key for which the user holds the corresponding private key. That private key can be installed on the same security token as the one for signing the firmware update package, or on a different token in case the tasks of signing and transferring the update is done by different persons.
 
 \subsection{Firmware Management Server}
 
@@ -37,7 +37,7 @@ FIXME: Describe how the client nodes will obtain firmware updates
 \subsection{Encryption Scheme for $K_{enc}$}
 \label{sec:dataEncryption}
 
-For the encryption of the AES key $K_{enc}$, which was used to encrypt the firmware update, the \href{https://cryptobook.nakov.com/asymmetric-key-ciphers/ecies-public-key-encryption}{ECIES} encryption scheme is used, which is built ontop of a private/public ECC key pair $(d_R, Q_R)$ of the receiving client. The scheme consists of the following steps:
+For the encryption of the AES key $K_{enc}$, which was used to encrypt the firmware update, the \href{https://cryptobook.nakov.com/asymmetric-key-ciphers/ecies-public-key-encryption}{ECIES} encryption scheme is used, which is built on top of a private/public ECC key pair $(d_R, Q_R)$ of the receiving client. The scheme consists of the following steps:
 
 \begin{enumerate}[label*=\arabic*.]
  	\item The sender generates an ephemeral ECC key pair $(d_E, Q_E)$

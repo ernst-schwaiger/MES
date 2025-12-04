@@ -55,7 +55,7 @@ Build System signing key pair (Build\_Signing)
     \item Role:
     \begin{itemize}
         \item Signs firmware update packages that are produced by the Build System before they are transferred to the Firmware Management Server.
-        \item Proves that a firmware update originated from an authorised maintainer.
+        \item Proves that a firmware update originated from an authorized maintainer.
     \end{itemize}
     \item Properties:
     \begin{itemize}
@@ -145,7 +145,7 @@ Symmetric session keys
         \item Role:
         \begin{itemize}
             \item Encrypts the SUIT firmware package before transmission.
-            \item Prevents unauthorised parties from learning the firmware content from intercepted traffic.
+            \item Prevents unauthorized parties from learning the firmware content from intercepted traffic.
         \end{itemize}
         \item Properties:
         \begin{itemize}
@@ -181,7 +181,7 @@ Key Generation
 Root CA and certificate keys
 }\label{subsubsec:rootCAAndCertificateKeys}
 
-\paragraph{} The Root CA and the two signing key pairs are generated once during system initialisation.
+\paragraph{} The Root CA and the two signing key pairs are generated once during system initialization.
 
 \begin{enumerate}
     \item Generate a Root CA key pair on a secure, offline machine using an Ed25519 capable tool chain.
