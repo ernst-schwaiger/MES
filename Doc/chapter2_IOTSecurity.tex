@@ -30,6 +30,26 @@ The host uses the manifest to execute the necessary steps to flash the device wi
 Fetching the necessary data such as the SUIT manifest or the encrypted firmware relies on CoAP with the library nanoCoaP.
 Figure \ref{fig:suit} shows how an update can be triggered.
 
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{|l|l|}
+  \hline
+   \textbf{Data sent to client} & \textbf{Protected} \\
+   \hline
+   Trigger notification by FW management server & Plaintext \\
+   \hline
+   SUIT Manifest & Plaintext, Signed \\
+   \hline
+   Firmware image & Encrypted, Signed \\
+   \hline
+   Key encryption key & Encrypted, Signed \\
+  \hline
+  \end{tabular}
+  \caption{Data transferred between FW Management server and Client nodes}
+  \label{table:data-transfer}
+\end{table}
+
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.8\textwidth]{images/SUIT-MES.drawio.png}
