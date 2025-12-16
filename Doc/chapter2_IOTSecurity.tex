@@ -16,19 +16,24 @@ In our case this project's configuration may look like this:
 
 \textbf{Note:} Although, the devices are serially connected to the device hosting the IPv6 network this way, the update still remains over-the-air as IPv6 packets are exchanged.
 
-\paragraph{Firmware:}
-The firmware must be encrypted and signed on the firmware management server and later decrypted by the host devices that process and execute the update.
-The encryption is done with existing implementations of RIOT-OS' Crypto library.
+\paragraph{Encryption and signature:}
+The firmware must be encrypted and signed on the firmware management server and later decrypted by the client devices that process and execute the update.
+The encryption and signature for the firmware on the management server is done via a Python script with the library PyCryptodome\footnote{https://pycryptodome.readthedocs.io/en/latest/src/introduction.html (Accessed 16-12-2025)}
+The decryption and signature on the client nodes is implemented using the existing implementations of RIOT-OS' Crypto library.
 % This is my suggestion to not overcomplicate this and justification is also there
-In this case, the algorithm chosen is CBC due to its simplicity and provides confidentiality.
-AEAD ciphers were considered, however, in this case, it is not necessary as integrity is provided by the signature.
-The signature algorithm used is Ed25519 since RIOT-OS provides the cryptographic library \textit{C25519}.
+Due to its simplicity, the algorithm AES-CBC is chosen. AEAD ciphers were considered, however, in this case, it is not necessary as integrity is provided by signatures.
+The signature algorithm used is Ed25519 since both RIOT-OS and PyCryptodome support it.
+Table \ref*{table:data-transfer} shows what data is exchanged from the management server and the client nodes and which are either plaintext, encrypted and/or signed.
 
-\paragraph{Process}
-To update the firmware, the SUIT procedure is used where the manifest and the encrypted and signed firmware are uploaded onto the firmware management server. The build process is explained in \ref{FirmwareManagement}.
-The host uses the manifest to execute the necessary steps to flash the device with the new firmware image.
+\paragraph{SUIT:}
+To update the firmware, the SUIT procedure is used where the signed manifest and the encrypted and signed firmware are uploaded in the firmware management server.
+The server triggers a notification and the client nodes begin the update procedure by fetching the manifest first.
+The client nodes use the manifest to execute the necessary steps to fetch the image, validate, decrypt and finally flash the device with the new firmware image.
 Fetching the necessary data such as the SUIT manifest or the encrypted firmware relies on CoAP with the library nanoCoaP.
-Figure \ref{fig:suit} shows how an update can be triggered.
+The SUIT manifest will be extended by adding steps to decrypt the firmware and session AES key as well as validations. 
+The encrypted session key resides in the SUIT manifest. 
+
+Figure \ref{fig:suit} shows how an overview how the update procedure is done via notification.
 
 
 \begin{table}[h!]
@@ -43,7 +48,7 @@ Figure \ref{fig:suit} shows how an update can be triggered.
    \hline
    Firmware image & Encrypted, Signed \\
    \hline
-   Key encryption key & Encrypted, Signed \\
+   Session AES key (Within Manifest) & Encrypted, Signed \\
   \hline
   \end{tabular}
   \caption{Data transferred between FW Management server and Client nodes}
@@ -53,7 +58,7 @@ Figure \ref{fig:suit} shows how an update can be triggered.
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.8\textwidth]{images/SUIT-MES.drawio.png}
-	\caption{Possibilities to trigger a SFOTA process with SUIT}
+	\caption{Overview - SFOTA process with SUIT}
 	\label{fig:suit}
 \end{figure}
 
@@ -84,7 +89,7 @@ Figure \ref{fig:suit} shows how an update can be triggered.
   \label{table:stride}
 \end{table}
 
-\paragraph{STRIDE}
-Potential threats need to be considered when implementing this update process. Therefore, the table \ref{table:stride} presents some main risks across the STRIDE categories and mitigations that are done in the implementation. 
+\paragraph{STRIDE:}
+Potential threats need to be considered when implementing this update process. Therefore, table \ref{table:stride} presents some main risks across the STRIDE categories and mitigations that are done in the implementation. 
 However, some risks were identified that are not going to be handled due to complexity and time limitations.
 

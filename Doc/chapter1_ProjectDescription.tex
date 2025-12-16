@@ -18,7 +18,7 @@ Figure \ref{fig:system} displays an overview of the system. A self-signed \emph{
 	\label{fig:system}
 \end{figure}
 
-\paragraph{}
+\paragraph{Process:}
 A service on the \emph{Firmware Management Server} detects a newly arrived firmware update, verifies the validity of the \emph{Build\_Signing} certificate and the validity of the signature. The service puts the received firmware into a SUIT update package enclosing all required meta data, signs the package using its private signing key (of the \emph{Mgmnt\_Signing} certificate), then generates a session AES key, which it uses to encrypt the SUIT update package. For each \emph{Client} node it then encrypts the AES key using the \emph{Client} public key and stores it along with the package signature.
 
 \paragraph{}
