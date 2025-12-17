@@ -318,7 +318,7 @@ Initial provisioning phase
 \begin{enumerate}
     \item The Root CA certificate is embedded into the Client Node firmware image or written into a dedicated read only configuration partition.
     \item The Mgmnt\_Signing certificate is installed on the Client Nodes as part of the initial firmware image.
-    \item Each Client Node generates its long term key pair $(d_R, Q_R)$ locally as described in Section \ref{subsubsec:clientNodeKeyPairs}
+    \item Each Client Node gets their long term key pair $(d_R, Q_R)$ as described in Section \ref{subsubsec:clientNodeKeyPairs}
     \item The public key $Q_R$, together with an identifier for the Client Node, is transmitted over a secure provisioning channel to the Firmware Management Server.
     \item The Firmware Management Server stores the mapping from device identity to $Q_R$ in its client database.
 \end{enumerate}
