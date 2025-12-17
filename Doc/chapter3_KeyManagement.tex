@@ -25,21 +25,23 @@ Key Types and Roles
 Root Certification Authority key pair
 }\label{subsubsec:rootCertificationAuthorityKeyPair}
 
-
 \begin{itemize}
-    \item Type: Asymmetric key pair for a Certification Authority, for example Ed25519.
+    \item Type: Asymmetric key pair for a Certification Authority, RSA.
     \item Owner: Root Certification Authority, operated offline.
     \item Role:
     \begin{itemize}
         \item Signs the Build\_Signing certificate that is used on the Build System.
         \item Signs the Mgmnt\_Signing certificate that is used on the Firmware Management Server.
+        \item Signs the Client\_Encryption certificates that bind each client public key to a client identity.
     \end{itemize}
     \item Properties:
     \begin{itemize}
-        \item Self-signed and never used directly for firmware signatures.
+        \item Self-signed and never used directly for firmware signatures or encryption.
         \item Stored offline and only used to issue or revoke subordinate certificates.
+        \item Acts as the single trust anchor for certificate validation in the system.
     \end{itemize}
 \end{itemize}
+
 
 
 \subsubsection{
@@ -88,24 +90,27 @@ Firmware Management Server signing key pair (Mgmnt\_Signing)
 
 
 \subsubsection{
-Client node key pairs
+Client node encryption key pair and certificate (Client\_Encryption)
 }\label{subsubsec:clientNodeKeyPairs}
 
-
 \begin{itemize}
-    \item Type: Asymmetric key pair for Elliptic Curve Diffie Hellman based on Curve25519 or a similar curve that is supported by the RIOT-OS crypto library C25519. The key pair is denoted $(d_R, Q_R)$ in Section \ref{sec:dataEncryption}.
+    \item Type: Asymmetric key pair for Elliptic Curve Diffie-Hellman based on Curve25519 (X25519) supported by the RIOT-OS cryptographic library C25519. The key pair is denoted $(d_R, Q_R)$ in Section \ref{sec:dataEncryption}.
     \item Owner: Individual Client Node.
     \item Role:
     \begin{itemize}
-        \item Acts as the long term key pair for the ECIES scheme used to protect the AES session key $K_{\text{enc}}$ that encrypts the firmware image.
-        \item The public key $Q_R$ is known to the Firmware Management Server and is used there as the receiver key for ECIES.
+        \item Acts as the long term receiver key pair for the ECIES scheme used to protect the Advanced Encryption Standard session key $K_{\text{enc}}$ that encrypts the firmware image.
+        \item Provides the receiver public key $Q_R$ that the Firmware Management Server uses for ECIES encryption of $K_{\text{enc}}$.
     \end{itemize}
     \item Properties:
     \begin{itemize}
         \item The private key $d_R$ remains on the Client Node and is never sent over the network.
-        \item The public key $Q_R$ is uploaded to the Firmware Management Server during an onboarding or provisioning step.
+        \item The public key $Q_R$ is bound to the client identity by an X.509 certificate (Client\_Encryption) signed by the Root Certification Authority.
+        \item The Firmware Management Server stores the Client\_Encryption certificate for each client and extracts $Q_R$ from that stored certificate when performing ECIES.
+        \item The Client Node stores the private key $d_R$ and, optionally, its own Client\_Encryption certificate for identification and consistency checks.
     \end{itemize}
 \end{itemize}
+
+
 
 
 \subsubsection{
@@ -177,34 +182,39 @@ Key Generation
 
 
 \subsubsection{
-Root CA and certificate keys
+Root Certification Authority and signing certificate keys
 }\label{subsubsec:rootCAAndCertificateKeys}
 
-\paragraph{} The Root CA and the two signing key pairs are generated once during system initialization.
+\paragraph{} The Root Certification Authority and the two signing key pairs are generated once during system initialization.
 
 \begin{enumerate}
-    \item Generate a Root CA key pair on a secure, offline machine using an Ed25519 capable tool chain.
-    \item Create a self-signed Root CA certificate that identifies the authority and contains the Root CA public key.
-    \item On the Build System, generate an RSA key pair for the Build\_Signing certificate. Export only the public key.
+    \item Generate a Root Certification Authority RSA key pair on a secure, offline machine.
+    \item Create a self-signed Root Certification Authority certificate that identifies the authority and contains the Root Certification Authority public key.
+    \item On the Build System, create an RSA key pair for the Build\_Signing certificate on a hardware crypto token. Export only the public key.
     \item On the Firmware Management Server, generate an Ed25519 key pair for the Mgmnt\_Signing certificate. Export only the public key.
-    \item On the Root CA machine, issue two certificates: one for the Build\_Signing key and one for the Mgmnt\_Signing key. Both certificates are signed with the Root CA key.
-    \item Install the Root CA certificate and the Build\_Signing certificate on the Firmware Management Server. Install the Root CA certificate and the Mgmnt\_Signing certificate on all Client Nodes.
+    \item On the Root Certification Authority machine, issue two certificates: one for the Build\_Signing key and one for the Mgmnt\_Signing key. Both certificates are signed with the Root Certification Authority key.
+    \item Install the Root Certification Authority certificate and the Build\_Signing certificate on the Firmware Management Server.
+    \item Install the Root Certification Authority certificate and the Mgmnt\_Signing certificate on all Client Nodes.
 \end{enumerate}
+
 
 
 \subsubsection{
-Client node key pairs
-}\label{subsubsec:clientNodeKeyPairs}
+Client node encryption key pairs and certificate issuance
+}\label{subsubsec:clientNodeKeyPairsKeyGeneration}
 
-
-\paragraph{} Client keys are generated during provisioning of each device.
+\paragraph{} Client encryption keys are generated during provisioning of each device using a trusted provisioning channel. The Firmware Management Server stores a client certificate for each client in order to obtain the public key for ECIES encryption.
 
 \begin{enumerate}
-    \item During manufacturing or first boot, the Client Node generates a Curve25519 compatible key pair $(d_R, Q_R)$ using the RIOT-OS random number generator or a hardware random number generator if available.
-    \item The private key $d_R$ is stored only in non volatile memory on the Client Node and is marked as secret.
-    \item The public key $Q_R$ is exported over a trusted channel to the Firmware Management Server or to a provisioning station that forwards it to the Firmware Management Server.
-    \item The Firmware Management Server stores $Q_R$ in a database entry that is associated with the identity of the Client Node, for example a serial number.
+    \item A provisioning station (for example the Build System in a controlled environment) generates a Curve25519 compatible key pair $(d_R, Q_R)$ for the Client Node.
+    \item The private key $d_R$ is installed onto the Client Node during provisioning and stored in non volatile memory. The private key is marked as secret and is never transmitted during normal operation.
+    \item The public key $Q_R$, together with a device identifier, is transferred to the Firmware Management Server and used to request certificate issuance.
+    \item The Root Certification Authority issues an X.509 Client\_Encryption certificate that contains $Q_R$ as subject public key and signs this certificate with the Root Certification Authority private key.
+    \item The Firmware Management Server stores the issued Client\_Encryption certificate in a database entry that is associated with the identity of the Client Node.
+    \item The issued Client\_Encryption certificate is optionally transferred to the Client Node over the trusted provisioning channel and stored on the Client Node for traceability and consistency checks.
 \end{enumerate}
+
+
 
 
 \subsubsection{
@@ -217,7 +227,7 @@ Session key $K_{\text{enc}}$ and ephemeral ECIES keys
 \begin{enumerate}
     \item When a new firmware update arrives and has been verified, the Firmware Management Server generates a random AES key $K_{\text{enc}}$ of suitable length, for example one hundred and twenty eight bits. The key is derived from a secure random source provided by the operating system, for example \texttt{/dev/urandom}.
     \item For each Client Node that will receive the update, the Firmware Management Server generates a fresh ephemeral ECC key pair $(d_E, Q_E)$.
-    \item For each Client Node the Firmware Management Server computes the shared secret $S = d_E \cdot Q_R$, derives $K_{\text{wrap}}$ from $S$ via HKDF, and encrypts $K_{\text{enc}}$ to obtain $C$, as described in Section \ref{sec:dataEncryption}.
+    \item For each Client Node the Firmware Management Server loads the stored Client\_Encryption certificate for that client, extracts the public key $Q_R$ from the certificate, computes the shared secret $S = d_E \cdot Q_R$, derives $K_{\text{wrap}}$ from $S$ via HKDF, and encrypts $K_{\text{enc}}$ to obtain $C$, as described in Section \ref{sec:dataEncryption}.
     \item After completion of the encryption and storage of $(Q_E, C)$, the ephemeral private keys $d_E$ are securely erased from memory.
 \end{enumerate}
 
@@ -254,7 +264,6 @@ Build System
 Firmware Management Server
 }\label{subsubsec:firmwareManagementServer}
 
-
 \begin{itemize}
     \item Mgmnt\_Signing private key:
     \begin{itemize}
@@ -262,14 +271,15 @@ Firmware Management Server
         \item Access limited to the firmware management service process, with restrictive file system permissions.
         \item Optionally additionally protected by a software based key encryption mechanism that requires a passphrase at service start.
     \end{itemize}
-    \item Root CA certificate and subordinate certificates:
+    \item Root Certification Authority certificate and subordinate certificates:
     \begin{itemize}
         \item Stored in a dedicated directory that is read only for the firmware management process.
         \item Used to verify the Build\_Signing certificate during the verification of incoming firmware updates.
     \end{itemize}
-    \item Client public keys $Q_R$:
+    \item Client certificates (Client\_Encryption):
     \begin{itemize}
-        \item Stored in a database or configuration file that maps each Client Node identity to its public key.
+        \item Stored in a database or configuration store that maps each Client Node identity to its Client\_Encryption certificate.
+        \item The Firmware Management Server extracts $Q_R$ from the stored certificate when performing ECIES encryption of $K_{\text{enc}}$.
         \item Access controlled so that only the firmware management process can read this information.
     \end{itemize}
     \item Session keys:
@@ -278,6 +288,7 @@ Firmware Management Server
         \item These keys are overwritten in memory as soon as no longer needed and are not written to persistent storage.
     \end{itemize}
 \end{itemize}
+
 
 
 \subsubsection{
@@ -316,11 +327,13 @@ Initial provisioning phase
 \paragraph{} During initial provisioning the following steps take place.
 
 \begin{enumerate}
-    \item The Root CA certificate is embedded into the Client Node firmware image or written into a dedicated read only configuration partition.
+    \item The Root Certification Authority certificate is embedded into the Client Node firmware image or written into a dedicated read only configuration partition.
     \item The Mgmnt\_Signing certificate is installed on the Client Nodes as part of the initial firmware image.
-    \item Each Client Node gets their long term key pair $(d_R, Q_R)$ as described in Section \ref{subsubsec:clientNodeKeyPairs}
-    \item The public key $Q_R$, together with an identifier for the Client Node, is transmitted over a secure provisioning channel to the Firmware Management Server.
-    \item The Firmware Management Server stores the mapping from device identity to $Q_R$ in its client database.
+    \item Each Client Node gets their encryption key pair $(d_R, Q_R)$ as described in Section \ref{subsubsec:clientNodeKeyPairs}.
+    \item The public key $Q_R$, together with an identifier for the Client Node, is transmitted over a trusted provisioning channel to the Firmware Management Server.
+    \item The Firmware Management Server issues a Client\_Encryption certificate containing $Q_R$, signed by the Root Certification Authority.
+    \item The Firmware Management Server stores the Client\_Encryption certificate associated with the device identity in its client database.
+    \item The issued Client\_Encryption certificate is transferred to the Client Node over the trusted provisioning channel and stored on the Client Node.
 \end{enumerate}
 
 
@@ -328,16 +341,16 @@ Initial provisioning phase
 Distribution during firmware updates
 }\label{subsubsec:distributionDuringFirmwareUpdates}
 
-
 \paragraph{} During a firmware update, the following key related data is transferred.
 
 \begin{enumerate}
-    \item The Build System sends the firmware update package, the signature generated with the Build\_Signing key, and the Build\_Signing certificate to the Firmware Management Server via Secure Shell. The mutual Secure Shell trust configuration is described in Section \ref{sec:BuildSystem}.
-    \item The Firmware Management Server verifies the Build\_Signing certificate against the Root CA certificate and verifies the signature of the package.
-    \item After verification and after packaging of the firmware into a SUIT update, the Firmware Management Server encrypts the SUIT firmware with $K_{\text{enc}}$ and encrypts $K_{\text{enc}}$ for each Client Node as $(Q_E, C)$ using ECIES.
+    \item The Build System sends the firmware update package and the detached signature generated with the Build\_Signing key to the Firmware Management Server via Secure Shell.
+    \item The Firmware Management Server verifies the signature using the Build\_Signing certificate that is already installed on the Firmware Management Server and validates that certificate against the Root Certification Authority certificate.
+    \item After verification and after packaging of the firmware into a SUIT update, the Firmware Management Server encrypts the SUIT firmware with $K_{\text{enc}}$ and encrypts $K_{\text{enc}}$ for each Client Node as $(Q_E, C)$ using ECIES. For ECIES, the Firmware Management Server extracts each client public key $Q_R$ from the stored Client\_Encryption certificate.
     \item The Firmware Management Server signs the SUIT package and, per Client Node, the pair $(Q_E, C)$ with its Mgmnt\_Signing key.
     \item The Client Node receives the encrypted firmware package, the pair $(Q_E, C)$, and the signature. The Client Node verifies the signature against the stored Mgmnt\_Signing public key, computes $K_{\text{wrap}}$ using its private key $d_R$ and the received $Q_E$, recovers $K_{\text{enc}}$, and decrypts the firmware.
 \end{enumerate}
+
 
 
 \subsection{
@@ -376,7 +389,6 @@ Key lifetime and rotation
     \item Client node key pairs $(d_R, Q_R)$:
     \begin{itemize}
         \item Long lifetime constrained by the physical lifetime of the device.
-        \item Optional periodic regeneration can be implemented by sending a special key update command from the Firmware Management Server, followed by an authenticated upload of the new public key $Q_R$.
     \end{itemize}
     \item Symmetric session keys $K_{\text{enc}}$ and $K_{\text{wrap}}$:
     \begin{itemize}
@@ -420,7 +432,6 @@ Summary
 }\label{subsec:summary}
 
 \paragraph{} This proposed key management design has a complete set of keys with clearly separated roles between the individual components at play. Long term signing keys are protected by hardware tokens or protected key stores. Client Nodes hold long term Elliptic Curve key pairs and trust anchors for the Firmware Management Server. Short lived session keys provide confidentiality for firmware images and are generated freshly for each update. Key rotation and simple revocation rules complete the scheme and provide a realistic and implementable basis for the Secure Firmware Update Over The Air process described in Sections \ref{IOTSecurity} and \ref{sec:FirmwareManagement}.
-
 
 
 
