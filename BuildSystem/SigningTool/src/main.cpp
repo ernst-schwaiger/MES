@@ -91,8 +91,14 @@ int main(int argc, char *argv[])
     }
     catch(const runtime_error& e)
     {
-        cerr << e.what() << '\n';
+        cerr << "Error: " << e.what() << '\n';
+        ret = 1;
     }
-    
+    catch(...)
+    {
+        cerr << "Unknown error.\n";
+        ret = 1;
+    }
+
     return ret;
 }
