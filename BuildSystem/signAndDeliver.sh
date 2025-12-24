@@ -1,19 +1,18 @@
 #!/bin/bash
 
-SIGNING_TOOL="signing-tool"
-FIRMWARE_USER_AT_SERVER="ernst@10.147.78.1"
+FIRMWARE_USER_AT_SERVER="ernst@192.168.0.111"
 
+# pick the first PKCS provider available on the system
 PKCS11_PROVIDER="$(find /usr/lib/ -name 'opensc-pkcs11.so' | head -n 1)"
-
-
-#FIXME: Derive path of shell script, use it to invoke SIGNING-TOOL
 if [ ! -f "${PKCS11_PROVIDER}" ]; then
     echo "PKCS11_PROVIDER is not installed, pls do \"sudo apt install p11-kit libp11-kit-dev\""
     exit 1
 fi
 
-if [ ! -f "./${SIGNING_TOOL}" ]; then
-    echo "${SIGNING_TOOL} not found, please build it"
+# the signing-tool is supposed to be in the same folder as this script
+SIGNING_TOOL="$(dirname "$0")/signing-tool"
+if [ ! -f "${SIGNING_TOOL}" ]; then
+    echo "${SIGNING_TOOL} not found, has it been built already?"
     exit 1
 fi
 
@@ -25,35 +24,36 @@ fi
 
 PACKAGE=$1
 
-if [ ! -f ${PACKAGE} ]; then
+if [ ! -f "${PACKAGE}" ]; then
     echo "Could not find package ${PACKAGE}"
     exit 1
 fi 
 
 # start the ssh agent unless already started, or use systemd
 # to start the agent
-if ! ssh-add -l >/dev/null 2>&1; then
-    echo "Starting new ssh-agent"
-    eval "$(ssh-agent -s)"
-fi
+# if ! ssh-add -l >/dev/null 2>&1; then
+#     echo "Starting new ssh-agent"
+#     eval "$(ssh-agent -s)"
+# fi
 
 # add PKCS provider, will prompt for PIN
-ssh-add -s "${PKCS11_PROVIDER}"
+#ssh-add -s "${PKCS11_PROVIDER}"
 
+# PIN for signing update package
+read -r -s -p "Enter PIN: " PIN
+echo
 
-echo "PIN:"
-read PIN
-echo "Entered PIN is : $PIN"
-
-./${SIGNING_TOOL} "${PIN}" "${PACKAGE}" "${PACKAGE}.sig"
-
-if [ $? -ne 0 ] || [ ! -f "${PACKAGE}.sig" ]; then
+# Sign the passed package with private key in the crypto dongle
+if ! "./${SIGNING_TOOL}" "${PIN}" "${PACKAGE}" "${PACKAGE}.sig" || [ ! -f "${PACKAGE}.sig" ]; then
     echo "Signing package ${PACKAGE} failed."
     exit 1
 fi
 
 # copy package and signature to firmware server
-scp -o "PKCS11Provider=${PKCS11_PROVIDER}" "${PACKAGE}" "${FIRMWARE_USER_AT_SERVER}":~
-scp -o "PKCS11Provider=${PKCS11_PROVIDER}" "${PACKAGE}.sig" "${FIRMWARE_USER_AT_SERVER}":~
-#scp "${PACKAGE}" "${FIRMWARE_USER_AT_SERVER}":~
-#scp "${PACKAGE}.sig" "${FIRMWARE_USER_AT_SERVER}":~
+if ! scp -o "PKCS11Provider=${PKCS11_PROVIDER}" "${PACKAGE}" "${PACKAGE}.sig" "${FIRMWARE_USER_AT_SERVER}":~ ; then
+    echo "Failed to copy package and signature to Firmware Management Server"
+    exit 1
+fi
+
+echo "Successfully copied ${PACKAGE} and ${PACKAGE}.sig to Firmware Management Server"
+exit 0
