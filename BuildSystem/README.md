@@ -148,10 +148,12 @@ touch ~/.ssh/authorized_keys
 cat ~/id_rsa.pub >> ~/.ssh/authorized_keys
 ```
 
-On the client, `ssh` must be invoked with the pkcs agent so that the private ssh key is taken from there, skip the `-vvv` to not produce verbose output. `ssh` may prompt for a PIN. After the pin is entered, the ssh connection should be established. Ensure that the security token is plugged in and activated in the virtual machine (see above):
+On the client, `ssh` and `scp` must be invoked with the pkcs agent so that the private ssh key is taken from there, skip the `-vvv` to not produce verbose output. `ssh` and `scp`may prompt for a PIN. After the pin is entered, the ssh connection should be established. Ensure that the security token is plugged in and activated in the virtual machine of the client (see above):
 
 ```bash
 ssh -vvv -I /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so <username>@<ssh-server>
+scp -o PKCS11Provider=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so <srcpath> ernst@10.147.78.1:<tgtpath>
+
 ```
 
 ## Create an RSA private/public key pair using pkcs11-tool

@@ -2,7 +2,7 @@ project(DemoLib)
 
 # Create library
 add_library(DemoLib
-    src/Demo.c
+    src/Demo.cpp
 )
 
 # Include headers
@@ -14,7 +14,7 @@ target_include_directories(DemoLib PUBLIC
 # Tests
 #
 add_executable(DemoLibTest
-    src/Demo.c
+    src/Demo.cpp
     test/DemoTest.cpp
     )
 
