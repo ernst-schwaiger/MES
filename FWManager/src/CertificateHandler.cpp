@@ -100,7 +100,7 @@ bool CertificateHandler::verifyCaCert() const
     return (caCertX509 != nullptr) && is_self_signed(caCertX509) && is_time_valid(caCertX509);
 }
 
-bool CertificateHandler::checkSignatureWithLeafCert(filesystem::path const &fileToCheck, filesystem::path const &signatureFile)
+bool CertificateHandler::checkSignatureWithLeafCert(filesystem::path const &fileToCheck, filesystem::path const &signatureFile) const
 {
     // file to check signature of
     ifstream f(fileToCheck.c_str(), ios::binary);

@@ -106,6 +106,24 @@ https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2021-05-28/
 ## ToDos
 - Rework makefile to create ECC certificates according to design description, with proper names
 - Implement server, periodically checking input folder.
+- Input Folder structure
+    - FWManager
+        - certs
+            - CA_Certificate.pem
+            - Build_Signing.pem
+            - Mgmnt_Signing.pem
+        - FirmwareUpdateIn
+            - packageName.tgz
+            - packageName.tgz.sig
+        - FirmwareUpdateProc
+            - TBD    
+        - Clients
+            - Client1
+                - PubKey.pem
+                - PackageName
+                    - 
+- Execute Python application
+- Research compilation of "Hello, World app" for RIOT: Can this be compiled/stripped as continuous blob?
 
 ## Resources
 

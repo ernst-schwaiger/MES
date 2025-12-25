@@ -13,8 +13,8 @@ public:
     CertificateHandler(std::filesystem::path const &caCert, std::filesystem::path const &leafCert);
     ~CertificateHandler();
 
-    bool isCertChainValid();
-    bool checkSignatureWithLeafCert(std::filesystem::path const &fileToCheck, std::filesystem::path const &signatureFile);
+    bool isCertChainValid() const;
+    bool checkSignatureWithLeafCert(std::filesystem::path const &fileToCheck, std::filesystem::path const &signatureFile) const;
 private:
     X509* load_cert(std::filesystem::path const &path) const;
     bool is_self_signed(X509* cert) const;
