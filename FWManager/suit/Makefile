@@ -20,15 +20,15 @@ network:
 	sudo ../../RIOT/dist/tools/tapsetup/tapsetup -c
 	sudo ip address add $(NETWORK_PREFIX) dev tapbr0
 
-all: create-manifest-basis generate-manifest clean
+all: create-manifest-basis generate-manifest sign-manifest clean
 json: create-manifest-basis generate-manifest-json clean
 
 create-manifest-basis:
-	@python3 $(CURDIR)/gen_manifest.py --urlroot $(COAP_URL) --seqnr $(SEQ_NR) -o $(MANIFEST_TEMP_PATH) $(FIRMWARE_DIR)/payload.bin:0:/nvm0/SLOT0.txt
+	@python3 $(CURDIR)/gen_manifest.py --urlroot $(COAP_URL) --seqnr $(SEQ_NR) -o $(MANIFEST_TEMP_PATH) $(FIRMWARE_DIR)/payload.bin:0:ram:0
 generate-manifest:
 	@$(SUIT_TOOL_PATH) create -f suit -i $(MANIFEST_DIR)/suit.tmp -o $(MANIFEST_UNSIGNED_PATH)
 sign-manifest:
-	@$(SUIT_TOOL_PATH) sign -k keys/default.pem -m $(MANIFEST_UNSIGNED_PATH) -o $(MANIFEST_SIGNED_PATH)
+	@$(SUIT_TOOL_PATH) sign -k ~/.local/share/RIOT/keys/default.pem -m $(MANIFEST_UNSIGNED_PATH) -o $(MANIFEST_SIGNED_PATH)
 clean:
 	@rm $(MANIFEST_TEMP_PATH)
 	@rm -rf $(CURDIR)/suit-manifest-generator/suit_tool/__pycache__
