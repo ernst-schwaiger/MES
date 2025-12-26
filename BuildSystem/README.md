@@ -8,18 +8,15 @@ Install dependencies
 sudo apt install p11-kit libp11-kit-dev pkg-config ninja-build gcc make meson opensc
 ```
 
-Get the version of the used openssl version via `openssl version` then download the sources for exactly this version, e.g. 3.0.14 for Ubuntu 22-04 or 3.4.0 for Kali 2025-08-12 (avoid versions 4.x!)
+Get the version of the used openssl version via `openssl version` then download the sources for exactly this version, e.g. 3.0.14 for Ubuntu 22-04 or 3.4.0 for Kali 2025-08-12 (avoid versions 4.x!), configure installation into user home folder with debugging info, compile, install
 
 ```bash
-wget https://www.openssl.org/source/openssl-3.0.14.tar.gz
-tar -xzf openssl-3.0.14.tar.gz
-cd openssl-3.0.14
-```
-
-Configure installation into user home folder with debugging info, compile, install
-```bash
-./Configure --prefix=$HOME/openssl-local --openssldir=$HOME/openssl-local/ssl debug-linux-x86_64
-make -sj && make install
+wget https://www.openssl.org/source/openssl-3.0.14.tar.gz && \
+tar -xzf openssl-3.0.14.tar.gz && \
+pushd openssl-3.0.14 && \
+./Configure --prefix=$HOME/openssl-local --openssldir=$HOME/openssl-local/ssl debug-linux-x86_64 && \
+make -sj && make install && \
+popd
 ```
 
 Append the following entries to `$HOME/.bashrc` or `$HOME/.zshrc` for Kali. `openssl` will then run the compiled openssl instead of the installed one. Remove these lines to run the installed openssl version again.
@@ -34,16 +31,11 @@ Open a new terminal so that the settings are taken over, test with `which openss
 
 ## Build PKCS provider for openssl
 
-Checkout pkcs11-provider.git provider
-
+Checkout pkcs11-provider.git provider, build, install it to local folder. A few warnings regarding runtime dependencies appear, they can be ignored.
 ```bash
-git clone https://github.com/latchset/pkcs11-provider.git
-```
-
-Build provider, install it to local folder. A few warnings regarding runtime dependencies appear, they can be ignored.
-```bash
-meson setup build --prefix=$HOME/pkcs11-local
-ninja -C build
+git clone https://github.com/latchset/pkcs11-provider.git && \
+meson setup build --prefix=$HOME/pkcs11-local && \
+ninja -C build && \
 ninja -C build install
 ```
 
@@ -56,7 +48,7 @@ find /usr/lib -name "opensc-pkcs11.so" -type f
 ```
 If the driver is installed somewhere else, use that path subsequently
 
-Add the `pkcs11`, `pkcs11_sect` entries to $HOME/openssl-local/ssl/openssl.cnf. Replace `/home/ernst/openssl-local` with the path to your local openssl installation, also remove the comment from the `activate = 1` entry in the `[default_sect]`:
+Add the `pkcs11`, `pkcs11_sect` entries to `$HOME/openssl-local/ssl/openssl.cnf`. Replace `/home/ernst/openssl-local` with the path to your local openssl installation, also remove the comment from the `activate = 1` entry in the `[default_sect]`:
 
 ```
 # List of providers to load
@@ -81,11 +73,12 @@ activate = 1
 Download released tarball from github, e.g. [libp11-0.4.16.tar.gz](https://github.com/OpenSC/libp11/releases/download/libp11-0.4.16/libp11-0.4.16.tar.gz), extract it, cd into the folder and configure it with the locally compiled openssl version with debugging info, install it below the $HOME folder again.
 
 ```bash
-wget https://github.com/OpenSC/libp11/releases/download/libp11-0.4.16/libp11-0.4.16.tar.gz
-tar -xf libp11-0.4.16.tar.gz
-cd libp11-0.4.16
-LDFLAGS=-L$HOME/openssl-local/lib64 CFLAGS=-I$HOME/openssl-local/include ./configure --prefix=$HOME/libp11-local --enable-debug CFLAGS="-g -O0"
-make -sj && make install
+wget https://github.com/OpenSC/libp11/releases/download/libp11-0.4.16/libp11-0.4.16.tar.gz && \
+tar -xf libp11-0.4.16.tar.gz && \
+pushd libp11-0.4.16 && \
+LDFLAGS=-L$HOME/openssl-local/lib64 CFLAGS=-I$HOME/openssl-local/include ./configure --prefix=$HOME/libp11-local --enable-debug CFLAGS="-g -O0" && \
+make -sj && make install && \
+popd
 ```
 
 In `$HOME/.bashrc` or `$HOME/.zshrc` adapt LD_LIBRARY_PATH so `libp11.so.3` can be found.
@@ -97,125 +90,12 @@ export LD_LIBRARY_PATH="$HOME/libp11-local/lib:$LD_LIBRARY_PATH"
 ...
 ```
 
-## Generate keys and certificates, build the signing-tool
+## Generate keys and certificates, build and test the signing-tool
 
-cd into `MES/BuildSystem`, ensure that the crypto token is plugged in and enabled for the virtual machine. To build the `siging-tool` and to install the certificates and keys in the crypto token, type `make`. The built `signing-tool` generates signatures for files using the "MES_Signing" key. `signing-tool` can be tested against `openssl` by generating the signatures for `testfile.txt` using both tools like this:
-
-```bash
-make
-echo "This is a test" > testfile.txt
-./signing-tool 123456 testfile.txt testfile.txt.sig
-openssl dgst -sha256 -sign MES_priv.pem -out testfile.txt.sig2 testfile.txt
-```
-
-The signature files `testfile.txt.sig` and `testfile.txt.sig` must have the same content. FIXME: Currently the "MES_Signing" key is available without providing the PIN. Adapt the makefile to repair that.
-
-## Generate an SSH Key pair using pkcs11-tool and SSH
-
-Create an SSH Key pair as follows
-```bash
-pkcs11-tool --module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so \
-    --login --pin "123456" \
-    --keypairgen --key-type rsa:2048 \
-    --id 01 --label "SSH"
-```
-
-Extract the public key to file `ssh_pubkey.der`:
-```bash
-pkcs11-tool --module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so \
-    --login --pin "123456" \
-    --read-object --type pubkey \
-    --id 01 --output ssh_pubkey.der
-```
-
-Convert public key to pem format:
-```bash
-openssl rsa -inform DER -pubin -in ssh_pubkey.der -outform PEM -out ssh_pubkey.pem
-```
-
-Generate an ssh key out of it, copy it to the ssh server:
-```bash
-ssh-keygen -i -m PKCS8 -f ssh_pubkey.pem > id_rsa.pub
-scp id_rsa.pub <username>@<ssh-server>
-```
-
-On the server, logged-in to the account for ssh-ing to it, create a `.ssh` folder (unless already existing), and a file `authorized_keys` in it, then append the content of the copied public key to the end of `authorized_keys`:
-
-```bash
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
-touch ~/.ssh/authorized_keys
-cat ~/id_rsa.pub >> ~/.ssh/authorized_keys
-```
-
-On the client, `ssh` and `scp` must be invoked with the pkcs agent so that the private ssh key is taken from there, skip the `-vvv` to not produce verbose output. `ssh` and `scp`may prompt for a PIN. After the pin is entered, the ssh connection should be established. Ensure that the security token is plugged in and activated in the virtual machine of the client (see above):
-
-```bash
-ssh -vvv -I /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so <username>@<ssh-server>
-scp -o PKCS11Provider=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so <srcpath> ernst@10.147.78.1:<tgtpath>
-
-```
-
-## Create an RSA private/public key pair using pkcs11-tool
-
-Ensure the crypto token is plugged in, and that in the VM the "Devices/USB", an "FS USB Token" shows up and is checked. Generate the key pair via `pkcs11-tool`:
-
-```bash
-pkcs11-tool --module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so \
-            --slot 0 \
-            --login \
-            --pin "123456" \
-            --keypairgen \
-            --key-type rsa:2048 \
-            --id 01 \
-            --label "MES_Key"
-```
-
-## Generate a certificate signing request for PKCS key pair
-
-Adapt the `-subj` field to what the cert shall contain
-
-```bash
-openssl req -new -provider pkcs11 -provider base -propquery '?provider=pkcs11' \
-    -key "pkcs11:object=MES_Key;type=private" \
-    -subj "/CN=Test/O=Org/C=AT"     \
-    -out myreq.csr
-```
-
-Generate self-signed root cert
-```bash
-openssl genrsa -out rootCA.key 2048
-openssl req -x509 -new -nodes \
-    -key rootCA.key \
-    -sha256 -days 365 \
-    -subj "/CN=MyRootCA/O=MyOrg/C=AT" \
-    -out rootCA.crt
-```
-
-Sign certificate with root cert:
-```bash
-openssl x509 -req \
-    -in myreq.csr \
-    -CA rootCA.crt -CAkey rootCA.key \
-    -CAcreateserial \
-    -out mes_key.crt \
-    -days 365 -sha256
-```
-
-Convert certificate to der/binary format
-```bash
-openssl x509 -in mes_key.crt -outform der -out mes_key.der
-```
-
-Write certificate back to security token
-
-```bash
-pkcs11-tool --module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so \
-            --slot 0 \
-            --login \
-            --pin "123456" \
-            --write-object mes_key.der \
-            --type cert \
-            --id 01 \
-            --label "MES_Key_Cert"
-```
+- cd into `MES/BuildSystem`.
+- Verify in `Makefile` that the entries for `TOKEN_USER_PIN` and `LIB_P11_FOLDER`are correct.
+- Ensure that the crypto token is plugged in and enabled for the virtual machine. 
+- Running `make` without parameters will create the certificates and keys for CA root, Build, and Mgmnt. It will also compile the `signing-tool` which signs packages using the private Build key. At some point, the token PIN must be entered on the command line.
+- `make clean` removes the certificates, keys and `signing-tool` again (error messages regarding failed key removal on token can be ignored).
+- `make test` verifies that `signing-tool` works. The first signing verification must be successful, the second one has to fail.
+- `make sshkey` creates an SSH key pair on the token and exports a matching `id_rsa.pub`. This key can be installed on the Firmware Management server via `ssh-copy-id -i id_rsa.pub <user>@<Firmware-Mgmnt-Server-Name-or-IP>`.
