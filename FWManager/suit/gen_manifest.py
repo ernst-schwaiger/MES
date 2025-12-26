@@ -33,7 +33,7 @@ def parse_arguments():
                         help='Manifest output binary file path')
     parser.add_argument('--uuid-vendor', '-V', default="riot-os.org",
                         help='Manifest vendor uuid')
-    parser.add_argument('--uuid-class', '-C', default="native",
+    parser.add_argument('--uuid-class', '-C', default="native64",
                         help='Manifest class uuid')
     parser.add_argument('slotfiles', nargs="+",
                         help='The list of slot file paths')
