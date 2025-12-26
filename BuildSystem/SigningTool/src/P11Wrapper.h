@@ -4,9 +4,12 @@
 #include <stdexcept>
 #include <array>
 #include <algorithm>
+#include <sstream>
+#include <cassert>
 
 #include <libp11.h>
 #include <openssl/sha.h>
+
 
 #include "config.h" // generated in Makefile
 
@@ -31,7 +34,9 @@ public:
         int rc = PKCS11_CTX_load(m_ctx, PKCS_MODULE);
         if (rc) 
         {
-            throw std::runtime_error("Failed to load library.");
+            std::stringstream ss;
+            ss << "Failed to load library " << PKCS_MODULE << ".";
+            throw std::runtime_error(ss.str());
         }
 
         rc = PKCS11_enumerate_slots(m_ctx, &m_slots, &m_nslots);
@@ -68,33 +73,42 @@ public:
         cleanup();
     }
 
-    int signBuffer(unsigned char const *buffer, unsigned int bufSize, unsigned char *signature, unsigned int *sigSize) const
+    enum class SignStatus
+    {
+        OK = 0,
+        CERT_LABEL_NOT_FOUND,
+        PRIV_KEY_NOT_FOUND,
+        SHA256_FAILURE,
+        SIGN_FAILURE
+    };
+
+    SignStatus signBuffer(unsigned char const *buffer, unsigned int bufSize, unsigned char *signature, unsigned int *sigSize) const
     {
         // Picks the certificate with the compiled-in signing label
         PKCS11_CERT *cert = getCertificate();
         if (cert == nullptr)
         {
-            return -1;
+            return SignStatus::CERT_LABEL_NOT_FOUND;
         }
 
         PKCS11_KEY *authkey = PKCS11_find_key(cert);
         if (authkey == nullptr)
         {
-            return -1;
+            return SignStatus::PRIV_KEY_NOT_FOUND;
         }
 
-        unsigned char digestBuf[ 256 / 8];
+        unsigned char digestBuf[256 / 8];
         if (SHA256(buffer, bufSize, &digestBuf[0]) == nullptr)
         {
-            return -1;
+            return SignStatus::SHA256_FAILURE;
         }
 
         if (PKCS11_sign(NID_sha256, digestBuf, sizeof(digestBuf), signature, sigSize, authkey) != 1)
         {
-            return -1;
+            return SignStatus::SIGN_FAILURE;
         }
 
-        return 0;
+        return  SignStatus::OK;
     }
     
 private:

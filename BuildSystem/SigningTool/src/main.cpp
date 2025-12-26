@@ -44,8 +44,28 @@ int signFile(string const &inpath, string const &outpath, p11::Wrapper const &w)
 
     SignatureType outSignature;
     unsigned int outSigLen = outSignature.size();
-    if (w.signBuffer(buf.data(), buf.size(), outSignature.data(), &outSigLen))
+
+    p11::Wrapper::SignStatus status = w.signBuffer(buf.data(), buf.size(), outSignature.data(), &outSigLen);
+    if (status != p11::Wrapper::SignStatus::OK)
     {
+        switch(status)
+        {
+            case p11::Wrapper::SignStatus::CERT_LABEL_NOT_FOUND:
+                cerr << "Could not find certificate with label " << TOKEN_SIGNING_LABEL << ".\n";
+                break;
+            case p11::Wrapper::SignStatus::PRIV_KEY_NOT_FOUND:
+                cerr << "Could not get private key of certificate with label " << TOKEN_SIGNING_LABEL << ".\n";
+                break;
+            case p11::Wrapper::SignStatus::SHA256_FAILURE:
+                cerr << "Failed to get SHA256 digest of data to sign.\n";
+                break;
+            case p11::Wrapper::SignStatus::SIGN_FAILURE:
+                cerr << "Sign operation on token failed.\n";
+                break;
+            default:
+                assert(0);
+        }
+
         return 1;
     }
 

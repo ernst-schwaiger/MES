@@ -2,78 +2,112 @@
 #
 # User PIN, object ID for key and cert on Crypto Token
 #
-TOKEN_USER_PIN := "123456"
-TOKEN_OBJECT_ID := "02"
-TOKEN_SIGNING_LABEL := "MES_Signing"
+TOKEN_USER_PIN 			:= "123456"
+TOKEN_OBJECT_ID 		:= "02"
+TOKEN_SIGNING_LABEL 	:= "Build_Signing"
 
+#
+# Where was libp11 installed? see README.md
+#
+LIB_P11_FOLDER			:= $(shell echo ~)/libp11-local
 
 #
 # Tools, shared objects
 #
-OPENSSL := $(shell which openssl)
-PKCS_TOOL :=$(shell which pkcs11-tool)
-PKCS_MODULE := $(shell find /usr/lib -name "opensc-pkcs11.so" -type f)
-# these params must always be provided, use this shorthand
-PKCS_PARAMS := --module $(PKCS_MODULE) --login --pin $(TOKEN_USER_PIN)
-
-all: CA_Cert.pem MES_Cert.pem .token_Key .token_Cert signing-tool
+OPENSSL 				:= $(shell which openssl)
+PKCS_TOOL 				:=$(shell which pkcs11-tool)
+PKCS_MODULE 			:= $(shell find /usr/lib -name "opensc-pkcs11.so" -type f)
+# these params must always be provided eith PKCS_TOOL, use this shorthand
+PKCS_PARAMS 			:= --module $(PKCS_MODULE) --login --pin $(TOKEN_USER_PIN)
 
 #
-# Generate CA Keys and Certificate
+# Options for the compilation of the signing-tool
 #
-CA_Cert.pem: CA_priv.pem
+CPP = g++
+OPENSSL_INCLUDE 		:= $(shell pkg-config --variable=includedir openssl)
+OPENSSL_LIB 			:= $(shell pkg-config --variable=libdir openssl)
+HOME_FOLDER 			:= $(shell echo ~)
+LIBP11_INCLUDE 			:= $(LIB_P11_FOLDER)/include
+LIBP11_LIB	 			:= $(LIB_P11_FOLDER)/lib
+CCOPTS 					:= -O0 -ggdb3 -Wall -Wextra -Werror -ISigningTool/src -I$(LIBP11_INCLUDE) -I$(OPENSSL_INCLUDE)
+LINKOPTS				:= -L$(LIBP11_LIB) -L$(OPENSSL_LIB) -lp11 -lcrypto
+
+all: CA_Certificate.pem Build_Certificate.pem .token_Cert signing-tool
+
+#
+# Root Certification Authority Key pair (CA certificate) ------------------------------------------
+#
+
+# certificate
+CA_Certificate.pem: CA_priv.pem
 	$(OPENSSL) req -x509 -new -nodes \
     -key CA_priv.pem \
     -sha256 -days 365 \
     -subj "/CN=MyRootCA/O=MyOrg/C=AT" \
     -out $@
 
+# key pair
 CA_priv.pem:
-	$(OPENSSL) genrsa -out $@
+	$(OPENSSL) genpkey -algorithm ed25519 -out $@
+
 
 #
-# Generate MES Signing Keys and Certificate
+# Build certificate and key pair ------------------------------------------------------------------
 #
-MES_priv.pem:
-	$(OPENSSL) genrsa -out $@
 
-MES_csr.pem: MES_priv.pem MESSignReq.conf
-	$(OPENSSL) req -new -key MES_priv.pem -config MESSignReq.conf -out $@
+# download certificate onto token
+.token_Cert: Build_Certificate.der
+	$(PKCS_TOOL) $(PKCS_PARAMS) --write-object Build_Certificate.der --type cert --id $(TOKEN_OBJECT_ID) --label $(TOKEN_SIGNING_LABEL)
+	touch $@
 
-MES_Cert.pem: MES_csr.pem CA_Cert.pem CA_priv.pem MESSignReq.conf
-	$(OPENSSL) x509 -req -in MES_csr.pem -CA CA_Cert.pem -CAkey CA_priv.pem \
+# build certificate in DER format, for downloading
+Build_Certificate.der: Build_Certificate.pem
+	$(OPENSSL) x509 -in Build_Certificate.pem -outform DER -out $@
+
+# certificate in PEM format
+Build_Certificate.pem: Build_csr.pem CA_Certificate.pem CA_priv.pem BuildSignReq.conf
+	$(OPENSSL) x509 -req -in Build_csr.pem -CA CA_Certificate.pem -CAkey CA_priv.pem \
 	-CAcreateserial -days 365 \
-	-extensions v3_req -extfile MESSignReq.conf \
+	-extensions v3_req -extfile BuildSignReq.conf \
 	-out $@
-#
-# Put MES Signing Keys and Certificate onto Crypto Token
-#
-.token_Key: MES_priv.der
-	$(PKCS_TOOL) $(PKCS_PARAMS) --write-object MES_priv.der --type privkey --id $(TOKEN_OBJECT_ID)	--label $(TOKEN_SIGNING_LABEL)
+
+# certificate signing request
+Build_csr.pem: .token_Key BuildSignReq.conf
+	$(OPENSSL) req -engine pkcs11 -keyform engine -key "pkcs11:object=$(TOKEN_SIGNING_LABEL);type=private" -config BuildSignReq.conf -new -out $@
+
+# private/public key pair, created directly on token
+.token_Key:
+	$(PKCS_TOOL) $(PKCS_PARAMS) --keypairgen --key-type rsa:2048 --id $(TOKEN_OBJECT_ID) --label $(TOKEN_SIGNING_LABEL)
 	touch $@
 
-MES_priv.der: MES_priv.pem
-	$(OPENSSL) rsa -in MES_priv.pem -outform DER -out $@
+#
+# signing-tool ------------------------------------------------------------------------------------
+#
 
-.token_Cert: MES_Cert.der
-	$(PKCS_TOOL) $(PKCS_PARAMS) --write-object MES_Cert.der --type cert --id $(TOKEN_OBJECT_ID) --label $(TOKEN_SIGNING_LABEL)
-	touch $@
-
-MES_Cert.der: MES_Cert.pem
-	$(OPENSSL) x509 -in MES_Cert.pem -outform DER -out $@
+signing-tool: SigningTool/src/main.cpp
+	echo "#pragma once" > SigningTool/src/config.h
+	echo "#define PKCS_MODULE \"$(PKCS_MODULE)\"" >> SigningTool/src/config.h
+	echo "#define TOKEN_SIGNING_LABEL \"$(TOKEN_SIGNING_LABEL)\"" >> SigningTool/src/config.h
+	$(CPP) $(CCOPTS) SigningTool/src/main.cpp -o $@ $(LINKOPTS)
 
 #
-# Build a tool for signing binaries, compile labels and module path into it
+# test signing-tool -------------------------------------------------------------------------------
 #
-signing-tool:
-	PKCS_MODULE=$(PKCS_MODULE) TOKEN_SIGNING_LABEL=$(TOKEN_SIGNING_LABEL) make -C SigningTool && cp SigningTool/signing-tool .
+test: signing-tool Build_Certificate.pem
+	echo "This is a test" > signedFile.txt
+	signing-tool $(TOKEN_USER_PIN) signedFile.txt signedFile.txt.sig
+	$(OPENSSL) x509 -in Build_Certificate.pem -pubkey -noout > Build_pub.pem
+	echo "This one should pass:"
+	$(OPENSSL) dgst -verify Build_pub.pem -signature signedFile.txt.sig signedFile.txt
+	echo "This is a test (forged)" > signedFile.txt
+	echo "This one should fail:"
+	$(OPENSSL) dgst -verify Build_pub.pem -signature signedFile.txt.sig signedFile.txt
 
 #
-# Cleanup certs and keys, also remove key and cert from crypto token
+# Cleanup -----------------------------------------------------------------------------------------
 #
 clean: clean_token_key clean_token_cert
-	rm -rf *.pem *.srl *.der signing-tool
-	make -C SigningTool clean
+	rm -rf *.pem *.srl *.der signing-tool signedFile.txt signedFile.txt.sig
 
 #
 # Remove certs, keys from crypto token, ignore errors if objects were not found
@@ -82,6 +116,7 @@ clean: clean_token_key clean_token_cert
 
 clean_token_key:
 	rm -f .token_Key && $(PKCS_TOOL) $(PKCS_PARAMS) --delete-object --label $(TOKEN_SIGNING_LABEL) --type privkey
+	rm -f .token_Key && $(PKCS_TOOL) $(PKCS_PARAMS) --delete-object --label $(TOKEN_SIGNING_LABEL) --type pubkey
 
 clean_token_cert:
 	rm -f .token_Cert && $(PKCS_TOOL) $(PKCS_PARAMS) --delete-object --label $(TOKEN_SIGNING_LABEL) --type cert

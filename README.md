@@ -110,8 +110,8 @@ https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2021-05-28/
     - FWManager
         - certs
             - CA_Certificate.pem
-            - Build_Signing.pem
-            - Mgmnt_Signing.pem
+            - Build_Certificate.pem
+            - FWMgmnt_Certificate.pem
         - FirmwareUpdateIn
             - packageName.tgz
             - packageName.tgz.sig
