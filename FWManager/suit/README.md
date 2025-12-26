@@ -15,7 +15,17 @@ python -m venv venv
 pip install cryptography
 ```
 
+## Network
+```shell
+make network
+```
+
 ## Generate Manifest
 ```shell
 make all
+```
+
+## Generate Manifest in JSON-format
+```shell
+make json
 ```
