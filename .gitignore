@@ -71,3 +71,7 @@ build
 *.der
 .token_Key
 .token_Cert
+
+# SUIT
+FWManager/suit/suit-manifest-generator/suit_tool/__pycache__/
+FWManager/suit/suit-manifest-generator/suit_tool/venv/
