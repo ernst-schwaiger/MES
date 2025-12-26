@@ -43,7 +43,7 @@ def parse_arguments():
 def main(args):
     uuid_vendor = uuid.uuid5(uuid.NAMESPACE_DNS, args.uuid_vendor)
     uuid_class = uuid.uuid5(uuid_vendor, args.uuid_class)
-
+    session_key = "fixed"
     template = {}
 
     template["manifest-version"] = int(1)
@@ -73,6 +73,7 @@ def main(args):
             "install-id": comp_name,
             "vendor-id": uuid_vendor.hex,
             "class-id": uuid_class.hex,
+            "session-key": session_key,
             "file": filename,
             "uri": uri,
             "bootable": False,

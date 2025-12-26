@@ -188,6 +188,7 @@ def compile_manifest(options, m):
         'install-size': lambda cid, data: ('image-size', data['install-size']),
         'vendor-id' : lambda cid, data: ('vendor-id', data['vendor-id']),
         'class-id' : lambda cid, data: ('class-id', data['class-id']),
+        'session-key' : lambda cid, data: ('session-key', data['session-key']),
         'offset' : lambda cid, data: ('offset', data['offset'])
     }
     # print('Common')
