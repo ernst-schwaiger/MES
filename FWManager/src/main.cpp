@@ -1,11 +1,12 @@
 #include <iostream>
-#include <filesystem>
 #include <vector>
 #include <string>
-
+#include <cstdio>
 #include <cstdlib>
 
+#include <sys/stat.h>
 #include <unistd.h> // sleep()
+#include <dirent.h>
 
 #include "CertificateHandler.h"
 
@@ -18,24 +19,76 @@ static void usage(char *argv0)
     exit(1);
 }
 
-vector<filesystem::path> find_sig_files(const filesystem::path& dir) 
+static string parent(string  const &path)
 {
-    vector<filesystem::path> result;
+    return path.substr(0, path.rfind('/')); 
+}
 
-    for (const auto& entry : filesystem::directory_iterator(dir)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".sig") {
-            result.push_back(entry.path());
+static string filename(string const &path)
+{
+    std::size_t pos = path.rfind('/');
+    return (pos < path.length()) ? path.substr(path.rfind('/') + 1, path.length()) : "<unknown>";
+}
+
+static void remove(string const &path)
+{
+    std::remove(path.c_str());
+}
+
+static std::vector<std::string> list_files(const std::string& path) {
+    std::vector<std::string> files;
+
+    DIR* dir = opendir(path.c_str());
+    if (!dir) return files;
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        // Skip "." and ".."
+        if (std::string(entry->d_name) == "." ||
+            std::string(entry->d_name) == "..")
+            continue;
+
+        std::string full = path + "/" + entry->d_name;
+
+        // Check if it's a regular file
+        struct stat st;
+        if (stat(full.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
+            files.push_back(full);
+        }
+    }
+
+    closedir(dir);
+    return files;
+}
+
+static bool is_directory(const std::string& path) {
+    struct stat info;
+    if (stat(path.c_str(), &info) != 0) {
+        // stat failed (path doesn't exist or no permissions)
+        return false;
+    }
+    return S_ISDIR(info.st_mode);
+}
+
+static vector<string> find_sig_files(const string &dir) 
+{
+    vector<string> result;
+
+    for (const auto& entry : list_files(dir)) {
+        if (entry.substr(entry.length() - 4, entry.length()) == ".sig") 
+        {
+            result.push_back(entry);
         }
     }
 
     return result;
 }
 
-static void pollForSignatureFiles(filesystem::path const &firmwareUpdateInFolder, CertificateHandler const &certHandler)
+static void pollForSignatureFiles(string const &firmwareUpdateInFolder, CertificateHandler const &certHandler)
 {
-    string pythonScript = firmwareUpdateInFolder.parent_path() / "python" / "myScript.py";
+    string pythonScript = parent(firmwareUpdateInFolder) + "/python/myScript.py";
 
-    vector<filesystem::path> sigFiles;
+    vector<string> sigFiles;
     do
     {
         sigFiles = find_sig_files(firmwareUpdateInFolder);
@@ -45,13 +98,13 @@ static void pollForSignatureFiles(filesystem::path const &firmwareUpdateInFolder
 
     for (auto const &sigFile : sigFiles)
     {
-        string sigFileName = string(sigFile.filename().c_str());
+        string sigFileName = filename(sigFile);
         size_t sigFileNameLen = sigFileName.length();
 
         if (sigFileNameLen > 4)
         {
             string checkFileName = sigFileName.substr(0, sigFileNameLen - 4);
-            filesystem::path checkFile = sigFile.parent_path() / checkFileName;
+            string checkFile = parent(sigFile) + "/" +  checkFileName;
 
             if (certHandler.checkSignatureWithLeafCert(checkFile, sigFile))
             {
@@ -64,8 +117,8 @@ static void pollForSignatureFiles(filesystem::path const &firmwareUpdateInFolder
                 cout << "Failed to check" << checkFile.c_str() << " against signature " << sigFile.c_str() << "\n";
             }
 
-            filesystem::remove(checkFile);
-            filesystem::remove(sigFile);
+            remove(checkFile);
+            remove(sigFile);
         }
     }
 }
@@ -77,21 +130,21 @@ int main(int argc, char *argv[])
         usage(argv[0]);
     }
 
-    filesystem::path serverFolder = argv[1];
+    string serverFolder = argv[1];
 
-    filesystem::path certFolder = serverFolder / "Certs";
+    string certFolder = serverFolder + "/certificates";
 
-    if (!filesystem::is_directory(certFolder)) 
+    if (!is_directory(certFolder)) 
     {
         cerr << "Path " << certFolder.c_str() << " is not a folder\n";
         usage(argv[0]);
     }
 
-    filesystem::path caCert = certFolder / "CA_Certificate.pem";
-    filesystem::path buildCert = certFolder / "Build_Signing.pem";
-    filesystem::path mgmntCert = certFolder / "Mgmnt_Signing.pem";
+    string caCert = certFolder + "/CA_Certificate.pem";
+    string buildCert = certFolder + "/Build_Certificate.pem";
+    string mgmntCert = certFolder + "/Mgmnt_Certificate.pem";
 
-    filesystem::path firmwareUpdateInFolder = serverFolder / "FirmwareUpdateIn";
+    string firmwareUpdateInFolder = serverFolder + "/FirmwareUpdateIn";
 
     try
     {
