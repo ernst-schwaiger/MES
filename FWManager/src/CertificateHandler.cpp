@@ -9,11 +9,9 @@
 #include "CertificateHandler.h"
 
 using namespace std;
-using namespace std::filesystem;
-
 using namespace fwm;
 
-CertificateHandler::CertificateHandler(path const &caCert, path const &leafCert) : caCertX509(nullptr), leafCertX509(nullptr)
+CertificateHandler::CertificateHandler(string const &caCert, string const &leafCert) : caCertX509(nullptr), leafCertX509(nullptr)
 {
     // load CA and leaf cert, check validity of CA cert (only validity wrt date)
     caCertX509 = load_cert(caCert);
@@ -60,7 +58,7 @@ CertificateHandler::~CertificateHandler()
     X509_free(leafCertX509);
 }
 
-X509* CertificateHandler::load_cert(filesystem::path const &path) const
+X509* CertificateHandler::load_cert(string const &path) const
 {
     FILE* f = fopen(path.c_str(), "r");
     if (!f) return nullptr;
@@ -100,7 +98,7 @@ bool CertificateHandler::verifyCaCert() const
     return (caCertX509 != nullptr) && is_self_signed(caCertX509) && is_time_valid(caCertX509);
 }
 
-bool CertificateHandler::checkSignatureWithLeafCert(filesystem::path const &fileToCheck, filesystem::path const &signatureFile) const
+bool CertificateHandler::checkSignatureWithLeafCert(string const &fileToCheck, string const &signatureFile) const
 {
     // file to check signature of
     ifstream f(fileToCheck.c_str(), ios::binary);
