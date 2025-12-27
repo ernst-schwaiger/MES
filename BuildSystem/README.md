@@ -1,21 +1,25 @@
-# PKCS Support for Openssl
+# Build System
 
 ## Build local version of openssl for PKCS support
 
 Install dependencies
 
 ```bash
-sudo apt install p11-kit libp11-kit-dev pkg-config ninja-build gcc make meson opensc
+sudo apt install p11-kit libp11-kit-dev pkg-config ninja-build gcc make meson opensc gcc-arm-none-eabi
 ```
 
-Get the version of the used openssl version via `openssl version` then download the sources for exactly this version, e.g. 3.0.14 for Ubuntu 22-04 or 3.4.0 for Kali 2025-08-12 (avoid versions 4.x!), configure installation into user home folder with debugging info, compile, install
+Get the version of the used openssl installation via `openssl version` then download the sources for exactly this version, e.g. 3.0.14 for Ubuntu 22-04 or 3.4.0 for Kali 2025-08-12, configure installation into user home folder with debugging info, compile, install
+
+```
+export OPENSSL_VERSION=...
+```
 
 ```bash
-wget https://www.openssl.org/source/openssl-3.0.14.tar.gz && \
-tar -xzf openssl-3.0.14.tar.gz && \
-pushd openssl-3.0.14 && \
+wget https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz && \
+tar -xzf openssl-${OPENSSL_VERSION}.tar.gz && \
+pushd openssl-${OPENSSL_VERSION} && \
 ./Configure --prefix=$HOME/openssl-local --openssldir=$HOME/openssl-local/ssl debug-linux-x86_64 && \
-make -sj && make install && \
+make -sj && make install -sj && \
 popd
 ```
 
@@ -34,9 +38,11 @@ Open a new terminal so that the settings are taken over, test with `which openss
 Checkout pkcs11-provider.git provider, build, install it to local folder. A few warnings regarding runtime dependencies appear, they can be ignored.
 ```bash
 git clone https://github.com/latchset/pkcs11-provider.git && \
+pushd pkcs11-provider
 meson setup build --prefix=$HOME/pkcs11-local && \
 ninja -C build && \
-ninja -C build install
+ninja -C build install && \
+popd
 ```
 
 `$HOME/openssl-local/lib64/ossl-modules` should now contain the shared object of the PKCS provider, `pkcs11.so`.
@@ -89,13 +95,37 @@ export LD_LIBRARY_PATH="$HOME/openssl-local/lib64:$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH="$HOME/libp11-local/lib:$LD_LIBRARY_PATH"
 ...
 ```
+## Setup the Build System
 
-## Generate keys and certificates, build and test the signing-tool
+### Generate SSH Key Pair, Install on Firmware Management Server
+
+- cd into `MES/BuildSystem`
+- Verify in `Makefile` that the entries for `TOKEN_USER_PIN` and `LIB_P11_FOLDER`are correct.
+- Ensure that the crypto token is plugged in and enabled for the virtual machine.
+- run `make sshkey` if not done already. This will produce a key pair on the token and `id_rsa.pub` in the current folder
+- ensure that a `firmware` user has been added to the Firmware Management Server host.
+- run `sh-copy-id -f -i id_rsa.pub firmware@<Firmware Management Server hostname or IP>` to install `id_rsa.pub` on the server
+- to test whether the ssh key works, run `ssh -I /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so firmware@<Firmware Management Server hostname or IP>`. This should ask for the PIN of the token, then open a shell on the server.
+
+### Generate keys and certificates, build and test the signing-tool
 
 - cd into `MES/BuildSystem`.
 - Verify in `Makefile` that the entries for `TOKEN_USER_PIN` and `LIB_P11_FOLDER`are correct.
-- Ensure that the crypto token is plugged in and enabled for the virtual machine. 
-- Running `make` without parameters will create the certificates and keys for CA root, Build, and Mgmnt. It will also compile the `signing-tool` which signs packages using the private Build key. At some point, the token PIN must be entered on the command line.
-- `make clean` removes the certificates, keys and `signing-tool` again (error messages regarding failed key removal on token can be ignored).
-- `make test` verifies that `signing-tool` works. The first signing verification must be successful, the second one has to fail.
-- `make sshkey` creates an SSH key pair on the token and exports a matching `id_rsa.pub`. This key can be installed on the Firmware Management server via `ssh-copy-id -i id_rsa.pub <user>@<Firmware-Mgmnt-Server-Name-or-IP>`.
+- Ensure that the crypto token is plugged in and enabled for the virtual machine.
+- run `make` to build
+    - the certificate and keys for CA root
+    - the Build certificate (signed by CA root) and keys
+    - the Mgmnt certificate (signed by CA root) and keys
+    - the `signing-tool` for signing the firmware update packages with the private key of the Build certificate
+- run `make test` to test the `signing-tool` works properly. The first signing attempt must pass, the second one must fail
+- if anything went wrong, do a `make clean && make`, which will recreate all certificates and keys
+
+### Install Certificates and Keys on Firmware Management Server
+
+If not done already, create a user `firmware` on the Firmware Management Server, build the keys and certificates as shown in the previous step, then run `make install_certs`,
+which will copy the necessary certificates and keys on the Firmware Management Server in `/home/firmware/FWManager`.
+
+### Deploy Firmware Update to Firmware Management Server
+
+run `/signAndDeliver.sh FWUpdate/update.tgz firmware@<firmware-management-host>`, which will sign `update.tgz`, and send the update package with the signature file to
+the Firmware Management Server.
