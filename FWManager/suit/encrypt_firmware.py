@@ -20,7 +20,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--client-public-key', '-c', required=True, help='Client public key file path')
     parser.add_argument('--ephemeral-public-output', '-eo', required=True, help='Ephemeral public key file path')
-    parser.add_argument('--output', '-o', default="ECIES.json", help='Session key file path')
+    parser.add_argument('--ephemeral-public-coap', '-eoc', required=True, help='Ephemeral public key file path for coap')
+    parser.add_argument('--output', '-o', default="ecies.json", help='Session key file path')
     parser.add_argument('--encrypted-firmware-filename', '-fn', default="firmware-latest.bin", help='Filename for encrypted firmware')
     parser.add_argument('firmware', help='The path to the firmware to be encrypted')
     return parser.parse_args()
@@ -108,7 +109,7 @@ def main(args):
 
     public_key = ephemeral_public.export_key(format='PEM')
     template = {
-        "ephemeral-public-key": args.ephemeral_public_output,
+        "ephemeral-public-key": args.ephemeral_public_coap,
         "salt": salt.hex(),
         "session-key": session_key.hex()
     }

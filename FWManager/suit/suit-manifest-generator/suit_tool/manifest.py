@@ -456,7 +456,9 @@ class SUITParameters(SUITManifestDict):
         'src' : ('source-component', 22, SUITComponentIndex),
         'compress' : ('compression-info', 19, SUITCompressionInfo),
         'offset' : ('offset', 5, SUITPosInt),
-        'session-key' : ('session-key', 99, SUITBytes)
+        'session-key' : ('session-key', 99, SUITBytes),
+        'salt' : ('salt', 100, SUITBytes),
+        'ephemeral-public-key' : ('ephemeral-public-key', 101, SUITTStr)
     })
     def from_json(self, j):
         return super(SUITParameters, self).from_json(j)
