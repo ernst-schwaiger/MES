@@ -1,29 +1,25 @@
-
 #
-# User PIN, object ID for key and cert on Crypto Token
+# Adapt TOKEN_USER_PIN, FIRMWARE_USER, and FIRMWARE_HOST
 #
 TOKEN_USER_PIN 			:= "123456"
+FIRMWARE_USER			:= firmware
+FIRMWARE_HOST			:= 192.168.178.39
+
+
+
+#
+# Object IDs for key and cert on Crypto Token, and for SSH key
+#
 TOKEN_OBJECT_ID_SSH		:= "01"
 SSH_LABEL				:= "SSH"
 TOKEN_OBJECT_ID 		:= "02"
 TOKEN_SIGNING_LABEL 	:= "Build_Signing"
 
 #
-# Firmware Host IP and username
-#
-FIRMWARE_USER			:= firmware
-FIRMWARE_HOST			:= 192.168.178.39
-
-#
-# Where was libp11 installed? see README.md
-#
-LIB_P11_FOLDER			:= $(shell echo ~)/libp11-local
-
-#
 # Tools, shared objects
 #
 OPENSSL 				:= $(shell which openssl)
-PKCS_TOOL 				:=$(shell which pkcs11-tool)
+PKCS_TOOL 				:= $(shell which pkcs11-tool)
 PKCS_MODULE 			:= $(shell dpkg -L opensc-pkcs11 | grep opensc-pkcs11.so | head -n 1)
 # these params must always be provided eith PKCS_TOOL, use this shorthand
 PKCS_PARAMS 			:= --module $(PKCS_MODULE) --login --pin $(TOKEN_USER_PIN)
@@ -34,9 +30,8 @@ PKCS_PARAMS 			:= --module $(PKCS_MODULE) --login --pin $(TOKEN_USER_PIN)
 CPP = g++
 OPENSSL_INCLUDE 		:= $(shell pkg-config --variable=includedir openssl)
 OPENSSL_LIB 			:= $(shell pkg-config --variable=libdir openssl)
-HOME_FOLDER 			:= $(shell echo ~)
-LIBP11_INCLUDE 			:= $(LIB_P11_FOLDER)/include
-LIBP11_LIB	 			:= $(LIB_P11_FOLDER)/lib
+LIBP11_INCLUDE 			:= $(shell pkg-config --variable=includedir libp11)
+LIBP11_LIB	 			:= $(shell pkg-config --variable=libdir libp11)
 CCOPTS 					:= -O0 -ggdb3 -Wall -Wextra -Werror -ISigningTool/src -I$(LIBP11_INCLUDE) -I$(OPENSSL_INCLUDE)
 LINKOPTS				:= -L$(LIBP11_LIB) -L$(OPENSSL_LIB) -lp11 -lcrypto
 
@@ -120,11 +115,12 @@ signing-tool: SigningTool/src/main.cpp
 test: signing-tool FWManager/certificates/Build_Certificate.pem
 	echo "This is a test" > signedFile.txt
 	./signing-tool $(TOKEN_USER_PIN) signedFile.txt signedFile.txt.sig
+	rm -f Build_pub.pem
 	$(OPENSSL) x509 -in FWManager/certificates/Build_Certificate.pem -pubkey -noout > Build_pub.pem
-	echo "This one should pass:"
+	@echo "This one should pass:"
 	$(OPENSSL) dgst -verify Build_pub.pem -signature signedFile.txt.sig signedFile.txt
 	echo "This is a test (forged)" > signedFile.txt
-	echo "This one should fail:"
+	@echo "This one should fail:"
 	$(OPENSSL) dgst -verify Build_pub.pem -signature signedFile.txt.sig signedFile.txt
 
 #
@@ -139,6 +135,15 @@ install_certs: FWManager/certificates/Build_Certificate.pem \
 	rsync -av -e "ssh -I $(PKCS_MODULE)" FWManager $(FIRMWARE_USER)@$(FIRMWARE_HOST):/home/$(FIRMWARE_USER)
 
 #
+# Build and Deliver Firmware updates --------------------------------------------------------------
+#
+firmware:
+	make -C FWUpdate
+
+install_firmware: signing-tool
+	./signAndDeliver.sh FWUpdate/update.tgz $(FIRMWARE_USER)@$(FIRMWARE_HOST)
+
+#
 # Cleanup -----------------------------------------------------------------------------------------
 #
 clean: clean_token_key clean_token_cert
@@ -148,7 +153,7 @@ clean: clean_token_key clean_token_cert
 #
 # Remove certs, keys from crypto token, ignore errors if objects were not found
 #
-.IGNORE: clean_token_key clean_token_cert sshkey
+.IGNORE: clean_token_key clean_token_cert sshkey test
 
 clean_token_key:
 	rm -f .token_Key && $(PKCS_TOOL) $(PKCS_PARAMS) --delete-object --label $(TOKEN_SIGNING_LABEL) --type privkey
@@ -159,7 +164,7 @@ clean_token_cert:
 
 
 #
-# Renews SSH key pair on crypto token, or creates a new one. Exports and converts the public key to ssh format
+# Renews SSH key pair on crypto token, or creates a new one. Exports id_rsa.pub for remote install
 #
 sshkey:
 	$(PKCS_TOOL) $(PKCS_PARAMS) --delete-object --label $(SSH_LABEL) --type privkey
@@ -169,3 +174,15 @@ sshkey:
 	$(OPENSSL) rsa -inform DER -pubin -in ssh_pub.der -outform PEM -out ssh_pub.pem
 	ssh-keygen -i -m PKCS8 -f ssh_pub.pem > id_rsa.pub
 	rm -f ssh_pub.der ssh_pub.pem
+
+#
+# installs id_rsa.pub on Firmware Management Server
+#
+install_sshkey:
+	ssh-copy-id -f -i id_rsa.pub $(FIRMWARE_USER)@$(FIRMWARE_HOST)
+
+#
+# Test: start ssh shell using the ssh key pair on the crypto token, PIN will be requested
+#
+ssh_with_key:
+	ssh -I $(PKCS_MODULE) $(FIRMWARE_USER)@$(FIRMWARE_HOST)

@@ -97,12 +97,6 @@ See also:
 - https://code.visualstudio.com/docs/remote/ssh
 - https://learn.microsoft.com/en-us/training/modules/develop-on-remote-machine/
 
-## OS on FWirmware Management Server
-
-Which Buster version to use for a working IEEE 802.15.4 and 6LoWPAN stack? I used this one:
-https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2021-05-28/2021-05-07-raspios-buster-arm64.zip
-
-
 ## ToDos
 - Rework makefile to create ECC certificates according to design description, with proper names
 - Implement server, periodically checking input folder.
@@ -122,8 +116,14 @@ https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2021-05-28/
                 - PubKey.pem
                 - PackageName
                     - 
-- Execute Python application
-- Research compilation of "Hello, World app" for RIOT: Can this be compiled/stripped as continuous blob?
+- Generate private/public key pair for two client nodes in Build System?
+- Test FWUpdate binary on SAMR target: Can it be executed without crash?
+- Document build of FWManager binary on buster properly, e.g. ~/.bashrc config != Build System
+- Which Raspbian Buster version to use for a working IEEE 802.15.4 and 6LoWPAN stack? I used this one:
+https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2021-05-28/2021-05-07-raspios-buster-arm64.zip
+(For this one, no updates are available, OpenSSL 3.x must be checked out and built)
+- Clarify hand-over FWManager invokes python script: which parameters?
+- Remove CMake from FWManager, not necessary
 
 ## Resources
 

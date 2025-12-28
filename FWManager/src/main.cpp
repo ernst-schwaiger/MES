@@ -15,7 +15,7 @@ using namespace fwm;
 
 static void usage(char *argv0)
 {
-    cerr << "Usage: " << argv0 << " <config folder>\n";
+    cerr << "Usage: " << argv0 << " <config folder> <python script>\n";
     exit(1);
 }
 
@@ -84,10 +84,8 @@ static vector<string> find_sig_files(const string &dir)
     return result;
 }
 
-static void pollForSignatureFiles(string const &firmwareUpdateInFolder, CertificateHandler const &certHandler)
+static void pollForSignatureFiles(string const &firmwareUpdateInFolder, CertificateHandler const &certHandler, string const &pythonScript)
 {
-    string pythonScript = parent(firmwareUpdateInFolder) + "/python/myScript.py";
-
     vector<string> sigFiles;
     do
     {
@@ -125,12 +123,13 @@ static void pollForSignatureFiles(string const &firmwareUpdateInFolder, Certific
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
         usage(argv[0]);
     }
 
     string serverFolder = argv[1];
+    string pythonScript = argv[2];
 
     string certFolder = serverFolder + "/certificates";
 
@@ -152,7 +151,7 @@ int main(int argc, char *argv[])
 
         while(true)
         {
-            pollForSignatureFiles(firmwareUpdateInFolder, certHandler);
+            pollForSignatureFiles(firmwareUpdateInFolder, certHandler, pythonScript);
         }
     }
     catch(const runtime_error& e)

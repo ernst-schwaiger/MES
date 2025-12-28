@@ -87,31 +87,36 @@ make -sj && make install && \
 popd
 ```
 
-In `$HOME/.bashrc` or `$HOME/.zshrc` adapt LD_LIBRARY_PATH so `libp11.so.3` can be found.
+In `$HOME/.bashrc` or `$HOME/.zshrc` adapt `LD_LIBRARY_PATH` and `PKG_CONFIG_PATH` so `libp11.so.3` can be found, and `pkg-confg` can find include and library paths
 
 ```bash
 ...
 export LD_LIBRARY_PATH="$HOME/openssl-local/lib64:$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH="$HOME/libp11-local/lib:$LD_LIBRARY_PATH"
 ...
+export PKG_CONFIG_PATH="$HOME/openssl-local/lib64/pkgconfig:$PKG_CONFIG_PATH"
+export PKG_CONFIG_PATH="$HOME/libp11-local/lib/pkgconfig:$PKG_CONFIG_PATH"
 ```
 ## Setup the Build System
+
+### Upfront Checks
+
+Before executing any of the steps below, verify in `MES/BuildSystem/Makefile` that 
+- `TOKEN_USER_PIN` is correct
+- `FIRMWARE_HOST` is the name or IP of the Firmware Management Server host
+- `FIRMWARE_USER` is a valid user on the Firmware Management Server host
+- the crypto token is plugged in and enabled for the virtual machine
 
 ### Generate SSH Key Pair, Install on Firmware Management Server
 
 - cd into `MES/BuildSystem`
-- Verify in `Makefile` that the entries for `TOKEN_USER_PIN` and `LIB_P11_FOLDER`are correct.
-- Ensure that the crypto token is plugged in and enabled for the virtual machine.
-- run `make sshkey` if not done already. This will produce a key pair on the token and `id_rsa.pub` in the current folder
-- ensure that a `firmware` user has been added to the Firmware Management Server host.
-- run `sh-copy-id -f -i id_rsa.pub firmware@<Firmware Management Server hostname or IP>` to install `id_rsa.pub` on the server
-- to test whether the ssh key works, run `ssh -I /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so firmware@<Firmware Management Server hostname or IP>`. This should ask for the PIN of the token, then open a shell on the server.
+- run `make sshkey`. This will produce a key pair on the token and `id_rsa.pub` in the current folder
+- run `make install_sshkey` to install `id_rsa.pub` on the server
+- to test whether the ssh key works, run `make ssh_with_key`. This should ask for the PIN of the token, then open an ssh on the `FIRMWARE_HOST`.
 
-### Generate keys and certificates, build and test the signing-tool
+### Generate keys and certificates, signing-tool, Install on Firmware Management Server
 
-- cd into `MES/BuildSystem`.
-- Verify in `Makefile` that the entries for `TOKEN_USER_PIN` and `LIB_P11_FOLDER`are correct.
-- Ensure that the crypto token is plugged in and enabled for the virtual machine.
+- cd into `MES/BuildSystem`
 - run `make` to build
     - the certificate and keys for CA root
     - the Build certificate (signed by CA root) and keys
@@ -119,13 +124,14 @@ export LD_LIBRARY_PATH="$HOME/libp11-local/lib:$LD_LIBRARY_PATH"
     - the `signing-tool` for signing the firmware update packages with the private key of the Build certificate
 - run `make test` to test the `signing-tool` works properly. The first signing attempt must pass, the second one must fail
 - if anything went wrong, do a `make clean && make`, which will recreate all certificates and keys
-
-### Install Certificates and Keys on Firmware Management Server
-
-If not done already, create a user `firmware` on the Firmware Management Server, build the keys and certificates as shown in the previous step, then run `make install_certs`,
-which will copy the necessary certificates and keys on the Firmware Management Server in `/home/firmware/FWManager`.
+- run `make install_certs`, which will copy the necessary certificates and keys on the Firmware Management Server in `FIRMWARE_USER@FIRMWARE_HOST:~/FWManager`
 
 ### Deploy Firmware Update to Firmware Management Server
+
+- cd into `MES/BuildSystem`
+- adapt `MSG` and `VERSION` in `MES/BuildSystem/FWUpdate/Makefile`
+- run `make firmware` to create a firmware update package in `MES/BuildSystem/FWUpdate/update.tgz`
+- run `make install_firmware` to deliver the firmware to the Firmware Management Server
 
 run `/signAndDeliver.sh FWUpdate/update.tgz firmware@<firmware-management-host>`, which will sign `update.tgz`, and send the update package with the signature file to
 the Firmware Management Server.

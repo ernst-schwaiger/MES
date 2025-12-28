@@ -25,7 +25,7 @@ static int getFileLength(string const &path, size_t &fileLength)
     return ret;
 }
 
-int signFile(string const &inpath, string const &outpath, p11::Wrapper const &w)
+static int signFile(string const &inpath, string const &outpath, p11::Wrapper const &w)
 {
     size_t fileLength;
     int ret = getFileLength(inpath, fileLength);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 
     if (argc != 4) 
     {
-        cerr << "usage: " << argv[0] << "<PIN> <file-to-sign> <signaturefile>\n";
+        cerr << "usage: " << argv[0] << " <PIN> <file-to-sign> <signaturefile>\n";
         return 1;
     }
 

@@ -38,10 +38,10 @@ if ! "./${SIGNING_TOOL}" "${PIN}" "${PACKAGE}" "${PACKAGE}.sig" || [ ! -f "${PAC
 fi
 
 # copy package and signature to firmware server
-if ! scp -o "PKCS11Provider=${PKCS11_PROVIDER}" "${PACKAGE}" "${PACKAGE}.sig" "${FIRMWARE_USER_AT_SERVER}":~/FWManager/FirmwareUpdateIn ; then
-    echo "Failed to copy package and signature to Firmware Management Server"
+if ! scp -o "PKCS11Provider=${PKCS11_PROVIDER}" "${PACKAGE}" "${PACKAGE}.sig" "${FIRMWARE_USER_AT_SERVER}:~/FWManager/FirmwareUpdateIn" ; then
+    echo "Failed to copy package and signature to ${FIRMWARE_USER_AT_SERVER}:~/FWManager/FirmwareUpdateIn"
     exit 1
 fi
 
-echo "Successfully copied ${PACKAGE} and ${PACKAGE}.sig to Firmware Management Server"
+echo "Successfully copied ${PACKAGE} and ${PACKAGE}.sig to ${FIRMWARE_USER_AT_SERVER}:~/FWManager/FirmwareUpdateIn"
 exit 0
