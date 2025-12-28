@@ -29,3 +29,11 @@ make all
 ```shell
 make json
 ```
+
+## ECIES and Firmware encryption
+```shell
+# Create ECC key pair beforehand
+python3 encrypt_firmware.py -c <path-to-client-public-Cert> -eo <path-to-ephemeral-public-key-to-save> <path-to-firmware-to-be-encrypted> -fn <path-of-encrypted-firmware>
+
+# See usage for more info
+```
