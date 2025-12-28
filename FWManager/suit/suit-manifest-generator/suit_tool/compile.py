@@ -284,6 +284,9 @@ def compile_manifest(options, m):
                 InstSeq.append(cmd)
             InstSeq.append(mkCommand(cid, 'directive-fetch', None))
             InstSeq.append(mkCommand(cid, 'condition-image-match', None))
+            
+            if c['session-key']:
+                InstSeq.append(mkCommand(cid, 'directive-decrypt-image', None))
 
         elif any(['uri' in c for c in choices]):
             FetchParams = {
