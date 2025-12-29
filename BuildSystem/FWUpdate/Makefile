@@ -17,11 +17,12 @@ CCOPTS		:= \
 # Configure version and message of our app
 MSG="Hello, World!"
 VERSION="1.0.0"
+SEQUENCE_NUMBER="42"
  
 all: update.tgz
 
 update.tgz:
-	MSG=$(MSG) VERSION=$(VERSION) ./generator.sh update.c manifest.mf
+	MSG=$(MSG) VERSION=$(VERSION) SEQUENCE_NUMBER=$(SEQUENCE_NUMBER) ./generator.sh update.c manifest.mf
 	$(CC) $(CCOPTS) -c update.c -o update.o
 	$(OBJCPY) -O binary --only-section=.hellofunc update.o update.bin
 	tar -czf update.tgz update.bin manifest.mf
