@@ -14,6 +14,8 @@ import json
 import os
 import uuid
 
+from collections import OrderedDict
+
 
 def str2int(x):
     if x.startswith("0x"):
@@ -37,13 +39,13 @@ def parse_arguments():
                         help='Manifest class uuid')
     parser.add_argument('slotfiles', nargs="+",
                         help='The list of slot file paths')
+    parser.add_argument('--ecies', '-ec', metavar='FILE', type=argparse.FileType('r'), help='ECIES info file path')
     return parser.parse_args()
 
 
 def main(args):
     uuid_vendor = uuid.uuid5(uuid.NAMESPACE_DNS, args.uuid_vendor)
     uuid_class = uuid.uuid5(uuid_vendor, args.uuid_class)
-    session_key = "fixed"
     template = {}
 
     template["manifest-version"] = int(1)
@@ -73,11 +75,18 @@ def main(args):
             "install-id": comp_name,
             "vendor-id": uuid_vendor.hex,
             "class-id": uuid_class.hex,
-            "session-key": session_key,
             "file": filename,
             "uri": uri,
             "bootable": False,
         }
+
+        if args.ecies:
+            m = json.loads(args.ecies.read(), object_pairs_hook=OrderedDict)
+            component.update({
+                "session-key": m['session-key'],
+                "ephemeral-public-key": m['ephemeral-public-key'],
+                "salt": m['salt']
+            })
 
         if offset:
             component.update({"offset": offset})

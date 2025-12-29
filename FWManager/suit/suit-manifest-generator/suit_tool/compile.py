@@ -189,6 +189,8 @@ def compile_manifest(options, m):
         'vendor-id' : lambda cid, data: ('vendor-id', data['vendor-id']),
         'class-id' : lambda cid, data: ('class-id', data['class-id']),
         'session-key' : lambda cid, data: ('session-key', data['session-key']),
+        'ephemeral-public-key' : lambda cid, data: ('ephemeral-public-key', data['ephemeral-public-key']),
+        'salt' : lambda cid, data: ('salt', data['salt']),
         'offset' : lambda cid, data: ('offset', data['offset'])
     }
     # print('Common')
@@ -282,6 +284,9 @@ def compile_manifest(options, m):
                 InstSeq.append(cmd)
             InstSeq.append(mkCommand(cid, 'directive-fetch', None))
             InstSeq.append(mkCommand(cid, 'condition-image-match', None))
+            
+            if c['session-key']:
+                InstSeq.append(mkCommand(cid, 'directive-decrypt-image', None))
 
         elif any(['uri' in c for c in choices]):
             FetchParams = {

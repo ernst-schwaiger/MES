@@ -456,7 +456,9 @@ class SUITParameters(SUITManifestDict):
         'src' : ('source-component', 22, SUITComponentIndex),
         'compress' : ('compression-info', 19, SUITCompressionInfo),
         'offset' : ('offset', 5, SUITPosInt),
-        'session-key' : ('session-key', 99, SUITBytes)
+        'session-key' : ('session-key', 99, SUITBytes),
+        'salt' : ('salt', 100, SUITBytes),
+        'ephemeral-public-key' : ('ephemeral-public-key', 101, SUITTStr)
     })
     def from_json(self, j):
         return super(SUITParameters, self).from_json(j)
@@ -559,7 +561,7 @@ SUITCommand.commands = [
     SUITCommandContainer('directive-run-sequence',         30, SUITRaw),
     SUITCommandContainer('directive-run-with-arguments',   31, SUITRaw),
     SUITCommandContainer('directive-swap',                 32, mkPolicy(policy=0x2)),
-    SUITCommandContainer('directive-set-session-key',      33, SUITParameters),
+    SUITCommandContainer('directive-decrypt-image',        33, mkPolicy(policy=0x2)),
 ]
 SUITCommand.jcommands = { c.json_key : c for c in SUITCommand.commands}
 SUITCommand.scommands = { c.suit_key : c for c in SUITCommand.commands}
