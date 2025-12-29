@@ -3,7 +3,7 @@ CPP := g++
 OPENSSL_INCLUDE 		:= $(shell pkg-config --variable=includedir openssl)
 OPENSSL_LIB 			:= $(shell pkg-config --variable=libdir openssl)
 
-CCOPTS := -ggdb3 -O0 -Isrc -I$(OPENSSL_INCLUDE)
+CCOPTS := -ggdb3 -O0 -Wall -Wextra -Werror -Isrc -I$(OPENSSL_INCLUDE)
 LINKOPTS := -L$(OPENSSL_LIB)
 all: FWManager
 

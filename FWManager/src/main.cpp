@@ -26,34 +26,40 @@ static string parent(string  const &path)
 
 static string filename(string const &path)
 {
-    std::size_t pos = path.rfind('/');
-    return (pos < path.length()) ? path.substr(path.rfind('/') + 1, path.length()) : "<unknown>";
+    size_t pos = path.rfind('/');
+    return (pos < path.length()) ? 
+        path.substr(path.rfind('/') + 1, path.length()) : 
+        "<unknown>";
 }
 
 static void remove(string const &path)
 {
-    std::remove(path.c_str());
+    remove(path.c_str());
 }
 
-static std::vector<std::string> list_files(const std::string& path) {
-    std::vector<std::string> files;
+static vector<string> list_files(string const &path)
+{
+    vector<string> files;
 
     DIR* dir = opendir(path.c_str());
     if (!dir) return files;
 
     struct dirent* entry;
-    while ((entry = readdir(dir)) != nullptr) {
+    while ((entry = readdir(dir)) != nullptr) 
+    {
+        string entryName(entry->d_name);
+
         // Skip "." and ".."
-        if (std::string(entry->d_name) == "." ||
-            std::string(entry->d_name) == "..")
-            continue;
+        if (entryName != "." && entryName != "..")
+        {
+            string entryPath = path + "/" + entryName;
 
-        std::string full = path + "/" + entry->d_name;
-
-        // Check if it's a regular file
-        struct stat st;
-        if (stat(full.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
-            files.push_back(full);
+            // Check if it's a regular file
+            struct stat st;
+            if (stat(entryPath.c_str(), &st) == 0 && S_ISREG(st.st_mode))
+            {
+                files.push_back(entryPath);
+            }
         }
     }
 
@@ -61,13 +67,16 @@ static std::vector<std::string> list_files(const std::string& path) {
     return files;
 }
 
-static bool is_directory(const std::string& path) {
+static bool is_directory(string const &path)
+{
+    bool ret = false;
     struct stat info;
-    if (stat(path.c_str(), &info) != 0) {
-        // stat failed (path doesn't exist or no permissions)
-        return false;
+    if (stat(path.c_str(), &info) == 0) 
+    {
+        ret = S_ISDIR(info.st_mode);
     }
-    return S_ISDIR(info.st_mode);
+
+    return ret;
 }
 
 static vector<string> find_sig_files(const string &dir) 
