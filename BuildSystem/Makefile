@@ -6,7 +6,6 @@ FIRMWARE_USER			:= firmware
 FIRMWARE_HOST			:= 192.168.178.39
 
 
-
 #
 # Object IDs for key and cert on Crypto Token, and for SSH key
 #
@@ -35,7 +34,12 @@ LIBP11_LIB	 			:= $(shell pkg-config --variable=libdir libp11)
 CCOPTS 					:= -O0 -ggdb3 -Wall -Wextra -Werror -ISigningTool/src -I$(LIBP11_INCLUDE) -I$(OPENSSL_INCLUDE)
 LINKOPTS				:= -L$(LIBP11_LIB) -L$(OPENSSL_LIB) -lp11 -lcrypto
 
-all: FWManager/certificates/CA_Certificate.pem FWManager/certificates/Build_Certificate.pem .token_Cert FWManager/certificates/Mgmnt_Certificate.pem signing-tool
+all: FWManager/certificates/CA_Certificate.pem \
+ FWManager/certificates/Build_Certificate.pem \
+ .token_Cert FWManager/certificates/Mgmnt_Certificate.pem \
+ signing-tool \
+ client_keypairs
+
 
 #
 # Root Certification Authority Key pair (CA certificate) ------------------------------------------
@@ -100,6 +104,23 @@ FWManager/certificates/Mgmnt_priv.pem:
 	$(OPENSSL) genpkey -algorithm ed25519 -out $@
 
 #
+# Client1 and Client2 ed25519 key pairs
+#
+client_keypairs:  ../Client1_priv.pem ../Client1_pub.pem ../Client2_priv.pem ../Client2_pub.pem
+
+../Client1_priv.pem:
+	$(OPENSSL) genpkey -algorithm ed25519 -out $@
+
+../Client1_pub.pem:  ../Client1_priv.pem
+	$(OPENSSL) pkey -in ../Client1_priv.pem -pubout -out $@
+
+../Client2_priv.pem:
+	$(OPENSSL) genpkey -algorithm ed25519 -out $@
+
+../Client2_pub.pem: ../Client2_priv.pem
+	$(OPENSSL) pkey -in ../Client2_priv.pem -pubout -out $@
+
+#
 # signing-tool ------------------------------------------------------------------------------------
 #
 
@@ -149,6 +170,7 @@ install_firmware: signing-tool
 clean: clean_token_key clean_token_cert
 	rm -rf *.pem *.srl *.der signing-tool signedFile.txt signedFile.txt.sig
 	rm -rf FWManager
+	rm -rf ../Client1_priv.pem ../Client1_pub.pem ../Client2_priv.pem ../Client2_pub.pem
 
 #
 # Remove certs, keys from crypto token, ignore errors if objects were not found

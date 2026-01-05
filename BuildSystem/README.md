@@ -115,6 +115,12 @@ Before executing any of the steps below, verify in `MES/BuildSystem/Makefile` th
 - run `make agent_sshkey` to let the SSH agent provide the token PIN to ssh/scp (reduces times to enter PIN on command line)
 - to test whether the ssh key works, run `make ssh_with_key`. This should ask for the PIN of the token, then open an ssh on the `FIRMWARE_HOST`.
 
+### Generate ED25519 private/public key pairs for client nodes
+- cd into `MES/BuildSystem`
+- run `make client_keypairs`, which will create the following ED25519 key pairs in the `MES` folder 
+    - `Client1_priv.pem`, `Client1_pub.pem` and
+    - `Client2_priv.pem`, `Client2_pub.pem`
+
 ### Generate keys and certificates, signing-tool, Install on Firmware Management Server
 
 - cd into `MES/BuildSystem`
