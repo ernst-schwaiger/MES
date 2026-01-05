@@ -21,6 +21,7 @@ FIRMWARE_PATH = $(MANIFEST_DIR)/update.bin
 FIRMWARE_ENCRYPTED_PATH = $(MANIFEST_DIR)/update-enc.bin
 
 EPHEMERAL_PUBLIC_KEY_PATH = cert/ephemeral-public.pem
+EPHEMERAL_PUBLIC_KEY_PATH_BSTR = cert/eph_key_bstr
 
 CERT_PATH = $(MANIFEST_DIR)/cert
 
@@ -30,7 +31,7 @@ network:
 
 all: create-manifest-basis generate-manifest sign-manifest notify-devices clean
 json: create-manifest-basis generate-manifest-json clean
-encrypt-json: encrypt-firmware create-manifest-basis generate-manifest-json clean
+encrypt-json: unzip-fw encrypt-firmware create-manifest-basis generate-manifest-json clean
 encrypt: unzip-fw encrypt-firmware prepare-ephemeral-key move-keys all
 
 
@@ -39,16 +40,15 @@ prepare-ephemeral-key:
 	@cd $(CERT_PATH) && openssl ec -pubin -in ephemeral-public.pem -outform DER -out pub_key.der -pubout
 
 move-keys:
-	@cd $(CERT_PATH) && python3 generate_key_file.py "$(shell cd $(MANIFEST_DIR)/cert && openssl ec -in pub_key.der -pubin -outform DER | xxd -p | tr -d '\n' | cut -c 55-182)"
+	@cd $(CERT_PATH) && (openssl ec -in pub_key.der -pubin -outform DER | xxd -p | tr -d '\n' | cut -c 55-182) > eph_key_bstr
 	@cd $(CERT_PATH) && python3 generate_key_file.py -o priv.h -vn priv_key_der "$(shell cd $(MANIFEST_DIR)/cert && openssl ec -in priv_key.der -outform DER | xxd -p | tr -d '\n' | cut -c 15-78)"
 	@cd $(CERT_PATH) && mv priv.h ../../../../RIOT/examples/advanced/suit_update/priv.h
-	@cd $(CERT_PATH) && mv pub.h ../../../../RIOT/examples/advanced/suit_update/pub.h
 
 unzip-fw:
 	@tar -xzf $(FIRMWARE_UPDATE_DIR)/update.tgz -C $(MANIFEST_DIR)
 
 encrypt-firmware:
-	@python3 $(CURDIR)/encrypt_firmware.py -c $(MANIFEST_DIR)/cert/public-self.pem -eo $(MANIFEST_DIR)/$(EPHEMERAL_PUBLIC_KEY_PATH) -eoc $(EPHEMERAL_PUBLIC_KEY_PATH) -fn $(FIRMWARE_ENCRYPTED_PATH) $(FIRMWARE_PATH)
+	@python3 $(CURDIR)/encrypt_firmware.py -c $(MANIFEST_DIR)/cert/public-self.pem -eo $(MANIFEST_DIR)/$(EPHEMERAL_PUBLIC_KEY_PATH) -eoc $(EPHEMERAL_PUBLIC_KEY_PATH_BSTR) -fn $(FIRMWARE_ENCRYPTED_PATH) $(FIRMWARE_PATH)
 
 create-manifest-basis:
 	@python3 $(CURDIR)/gen_manifest.py --urlroot $(COAP_URL) -mf $(MANIFEST_DIR)/manifest.mf -o $(MANIFEST_TEMP_PATH) $(FIRMWARE_ENCRYPTED_PATH):0:ram:0 --ecies ecies.json
@@ -62,8 +62,8 @@ notify-devices:
 clean:
 	@rm $(MANIFEST_TEMP_PATH)
 	@rm -rf $(CURDIR)/suit-manifest-generator/suit_tool/__pycache__
-	@rm $(CERT_PATH)/priv_key.der
-	@rm $(CERT_PATH)/pub_key.der
+	#@rm $(CERT_PATH)/priv_key.der
+	#@rm $(CERT_PATH)/pub_key.der
 
 generate-manifest-json:
 	@$(SUIT_TOOL_PATH) create -f json -i $(CURDIR)/manifests/suit.tmp -o $(CURDIR)/manifests/manifest.json
