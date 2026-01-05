@@ -4,7 +4,6 @@ APPLICATION = suit_gen_manifest
 
 SUIT_TOOL_PATH ?= python3 $(CURDIR)/suit-manifest-generator/bin/suit-tool
 MANIFEST_DIR ?= $(CURDIR)/manifests
-FIRMWARE_DIR ?= $(MANIFEST_DIR)/firmwares
 FIRMWARE_UPDATE_DIR ?= ../FWUpdateIn
 
 NETWORK_PREFIX ?= 2001:db8::1
@@ -18,9 +17,8 @@ MANIFEST_UNSIGNED_PATH ?= $(MANIFEST_DIR)/manifest
 MANIFEST_SIGNED_PATH ?= $(MANIFEST_DIR)/suit_manifest.signed
 
 # Paths for firmware
-FIRMWARE_ZIP_PATH = $(FIRMWARE_DIR)/update.tgz
-FIRMWARE_PATH = $(FIRMWARE_DIR)/update.bin
-FIRMWARE_ENCRYPTED_PATH = $(FIRMWARE_DIR)/update-enc.bin
+FIRMWARE_PATH = $(MANIFEST_DIR)/update.bin
+FIRMWARE_ENCRYPTED_PATH = $(MANIFEST_DIR)/update-enc.bin
 
 EPHEMERAL_PUBLIC_KEY_PATH = cert/ephemeral-public.pem
 
@@ -30,10 +28,11 @@ network:
 	sudo ../../RIOT/dist/tools/tapsetup/tapsetup -c
 	sudo ip address add $(NETWORK_PREFIX)/64 dev tapbr0
 
-all: unzip-fw create-manifest-basis generate-manifest sign-manifest notify-devices clean
+all: create-manifest-basis generate-manifest sign-manifest notify-devices clean
 json: create-manifest-basis generate-manifest-json clean
 encrypt-json: encrypt-firmware create-manifest-basis generate-manifest-json clean
-encrypt: encrypt-firmware prepare-ephemeral-key move-keys all
+encrypt: unzip-fw encrypt-firmware prepare-ephemeral-key move-keys all
+
 
 prepare-ephemeral-key:
 	@cd $(CERT_PATH) && openssl ec -in private-self.pem -outform DER -out priv_key.der
@@ -61,7 +60,7 @@ notify-devices:
 	# Add more devices here as needed
 	@cd ../../RIOT/ && SUIT_COAP_SERVER=[2001:db8::1] SUIT_CLIENT=[2001:db8::2] BOARD=native make -C examples/advanced/suit_update suit/mes-notify
 clean:
-	#@rm $(MANIFEST_TEMP_PATH)
+	@rm $(MANIFEST_TEMP_PATH)
 	@rm -rf $(CURDIR)/suit-manifest-generator/suit_tool/__pycache__
 	@rm $(CERT_PATH)/priv_key.der
 	@rm $(CERT_PATH)/pub_key.der
