@@ -182,6 +182,12 @@ install_sshkey:
 	ssh-copy-id -f -i id_rsa.pub $(FIRMWARE_USER)@$(FIRMWARE_HOST)
 
 #
+# Pass the token PIN to ssh-agent so it does not request it for every ssh/scp operation
+#
+agent_sshkey:
+	ssh-add -s $(PKCS_MODULE)
+
+#
 # Test: start ssh shell using the ssh key pair on the crypto token, PIN will be requested
 #
 ssh_with_key:

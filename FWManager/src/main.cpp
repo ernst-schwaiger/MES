@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -7,6 +8,8 @@
 #include <sys/stat.h>
 #include <unistd.h> // sleep()
 #include <dirent.h>
+
+#include <syslog.h>
 
 #include "CertificateHandler.h"
 
@@ -100,7 +103,7 @@ static void pollForSignatureFiles(string const &firmwareUpdateInFolder, Certific
     {
         sigFiles = find_sig_files(firmwareUpdateInFolder);
         sleep(5);
-        cout << "No signature files found.\n";
+        syslog(LOG_INFO, "No signature files found.\n");
     } while (sigFiles.empty());
 
     for (auto const &sigFile : sigFiles)
@@ -115,13 +118,24 @@ static void pollForSignatureFiles(string const &firmwareUpdateInFolder, Certific
 
             if (certHandler.checkSignatureWithLeafCert(checkFile, sigFile))
             {
-                cout << "File " << checkFile.c_str() << " was successfully verified against signature " << sigFile.c_str() << "\n";
-                string pythonCall = "python3 " + pythonScript + " " + string(checkFile.c_str()); 
-                system(pythonCall.c_str());
+                stringstream s;
+                s << "File " << checkFile.c_str() << " was successfully verified against signature " << sigFile.c_str() << "\n";
+                syslog(LOG_INFO, s.str().c_str());
+
+                s.clear();
+                s << "python3 " <<  pythonScript << " " << string(checkFile.c_str());
+
+                stringstream s2;
+                s2 << "Invoking " << s.str() << "...";
+                syslog(LOG_INFO, s2.str().c_str());
+
+                system(s.str().c_str());
             }
             else
             {
-                cout << "Failed to check" << checkFile.c_str() << " against signature " << sigFile.c_str() << "\n";
+                stringstream s;
+                s << "Failed to check" << checkFile.c_str() << " against signature " << sigFile.c_str() << "\n";
+                syslog(LOG_ERR, s.str().c_str());
             }
 
             remove(checkFile);
@@ -156,6 +170,9 @@ int main(int argc, char *argv[])
 
     try
     {
+        openlog("FWManager", LOG_PID | LOG_CONS, LOG_DAEMON);
+        syslog(LOG_INFO, "Starting server ...");
+
         CertificateHandler certHandler(caCert, buildCert);
 
         while(true)
@@ -165,14 +182,17 @@ int main(int argc, char *argv[])
     }
     catch(const runtime_error& e)
     {
-        cerr << e.what() << '\n';
+        syslog(LOG_CRIT, e.what());
+        closelog();
         return 1;
     }
     catch(...)
     {
-        cerr << "Unknown exception occurred.\n";
+        syslog(LOG_CRIT, "Unknown exception occurred.\n");
+        closelog();
         return 1;
     }
 
+    closelog();
     return 0;
 }

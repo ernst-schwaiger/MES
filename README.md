@@ -98,32 +98,49 @@ See also:
 - https://learn.microsoft.com/en-us/training/modules/develop-on-remote-machine/
 
 ## ToDos
-- Rework makefile to create ECC certificates according to design description, with proper names
-- Implement server, periodically checking input folder.
-- Input Folder structure
-    - FWManager
-        - certs
-            - CA_Certificate.pem
-            - Build_Certificate.pem
-            - FWMgmnt_Certificate.pem
-        - FirmwareUpdateIn
-            - packageName.tgz
-            - packageName.tgz.sig
-        - FirmwareUpdateProc
-            - TBD    
-        - Clients
-            - Client1
-                - PubKey.pem
-                - PackageName
-                    - 
+
+## Agenda 25-12-28
+
 - Generate private/public key pair for two client nodes in Build System?
-- Test FWUpdate binary on SAMR target: Can it be executed without crash?
-- Document build of FWManager binary on buster properly, e.g. ~/.bashrc config != Build System
+-> generate private/public key pairs for Client1 and Client2 (as .pem or .der file) (Stefan)
+
+- Document build of FWManager binary on buster properly, e.g. ~/.bashrc config != Build System (Ernst)
 - Which Raspbian Buster version to use for a working IEEE 802.15.4 and 6LoWPAN stack? I used this one:
 https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2021-05-28/2021-05-07-raspios-buster-arm64.zip
 (For this one, no updates are available, OpenSSL 3.x must be checked out and built)
 - Clarify hand-over FWManager invokes python script: which parameters?
 - Remove CMake from FWManager, not necessary
+- Manifest file structure?
+- Raspbian Buster - 
+- Discuss common Folder for FW Management, e.g.
+    - FWManager
+        - certificates
+            - Build_Certificate.der  
+            - CA_Certificate.pem  
+            - CA_priv.pem
+            - Mgmnt_priv.pem
+            - Build_Certificate.pem
+            - CA_Certificate.srl
+            - Mgmnt_Certificate.pem
+        - FirmwareUpdateIn
+            - packageName.tgz
+            - packageName.tgz.sig
+        - FirmwareUpdateProcessing(?)
+            - ...
+        - Clients
+            - Client1
+                - PubKey.pem
+                - ...
+AI Ernst: Remove Clent folder from repo.
+DONE
+AI Ernst: Generate sequence number in manifest file
+DONE
+
+# Agenda 26-01-04
+
+- MES/BuildSystem/Makefile: Add target to create ECC public/private key pairs in MES folder
+- AI Ernst: Try to get 6LoWPAN to run on Raspberry device.
+
 
 ## Resources
 

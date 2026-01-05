@@ -112,6 +112,7 @@ Before executing any of the steps below, verify in `MES/BuildSystem/Makefile` th
 - cd into `MES/BuildSystem`
 - run `make sshkey`. This will produce a key pair on the token and `id_rsa.pub` in the current folder
 - run `make install_sshkey` to install `id_rsa.pub` on the server
+- run `make agent_sshkey` to let the SSH agent provide the token PIN to ssh/scp (reduces times to enter PIN on command line)
 - to test whether the ssh key works, run `make ssh_with_key`. This should ask for the PIN of the token, then open an ssh on the `FIRMWARE_HOST`.
 
 ### Generate keys and certificates, signing-tool, Install on Firmware Management Server

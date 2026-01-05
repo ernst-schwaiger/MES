@@ -38,6 +38,10 @@ if ! "./${SIGNING_TOOL}" "${PIN}" "${PACKAGE}" "${PACKAGE}.sig" || [ ! -f "${PAC
 fi
 
 # copy package and signature to firmware server
+# running scp with the ssh agent activated does not work all the time. The ssh agent reports an error message every other time
+# adding -o "PKCS11Provider=${PKCS11_PROVIDER}" again to enforce PIN request for scp/no ssh agent
+#echo "SSH_AUTH_SOCK is: $SSH_AUTH_SOCK."
+#ssh-add -l
 if ! scp -o "PKCS11Provider=${PKCS11_PROVIDER}" "${PACKAGE}" "${PACKAGE}.sig" "${FIRMWARE_USER_AT_SERVER}:~/FWManager/FirmwareUpdateIn" ; then
     echo "Failed to copy package and signature to ${FIRMWARE_USER_AT_SERVER}:~/FWManager/FirmwareUpdateIn"
     exit 1
