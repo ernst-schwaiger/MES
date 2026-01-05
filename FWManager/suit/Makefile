@@ -24,6 +24,8 @@ FIRMWARE_ENCRYPTED_PATH = $(FIRMWARE_DIR)/update-enc.bin
 
 EPHEMERAL_PUBLIC_KEY_PATH = cert/ephemeral-public.pem
 
+CERT_PATH = $(MANIFEST_DIR)/cert
+
 network:
 	sudo ../../RIOT/dist/tools/tapsetup/tapsetup -c
 	sudo ip address add $(NETWORK_PREFIX)/64 dev tapbr0
@@ -31,7 +33,17 @@ network:
 all: unzip-fw create-manifest-basis generate-manifest sign-manifest clean
 json: create-manifest-basis generate-manifest-json clean
 encrypt-json: encrypt-firmware create-manifest-basis generate-manifest-json clean
-encrypt: encrypt-firmware all
+encrypt: encrypt-firmware prepare-ephemeral-key move-keys all
+
+prepare-ephemeral-key:
+	@cd $(CERT_PATH) && openssl ec -in private-self.pem -outform DER -out priv_key.der
+	@cd $(CERT_PATH) && openssl ec -pubin -in ephemeral-public.pem -outform DER -out pub_key.der -pubout
+
+move-keys:
+	@cd $(CERT_PATH) && python3 generate_key_file.py "$(shell cd $(MANIFEST_DIR)/cert && openssl ec -in pub_key.der -pubin -outform DER | xxd -p | tr -d '\n' | cut -c 55-182)"
+	@cd $(CERT_PATH) && python3 generate_key_file.py -o priv.h -vn priv_key_der "$(shell cd $(MANIFEST_DIR)/cert && openssl ec -in priv_key.der -outform DER | xxd -p | tr -d '\n' | cut -c 15-78)"
+	@cd $(CERT_PATH) && mv priv.h ../../../../RIOT/examples/advanced/suit_update/priv.h
+	@cd $(CERT_PATH) && mv pub.h ../../../../RIOT/examples/advanced/suit_update/pub.h
 
 unzip-fw:
 	@tar -xzf $(FIRMWARE_UPDATE_DIR)/update.tgz -C $(MANIFEST_DIR)
@@ -48,6 +60,8 @@ sign-manifest:
 clean:
 	#@rm $(MANIFEST_TEMP_PATH)
 	@rm -rf $(CURDIR)/suit-manifest-generator/suit_tool/__pycache__
+	@rm $(CERT_PATH)/priv_key.der
+	@rm $(CERT_PATH)/pub_key.der
 
 generate-manifest-json:
 	@$(SUIT_TOOL_PATH) create -f json -i $(CURDIR)/manifests/suit.tmp -o $(CURDIR)/manifests/manifest.json
