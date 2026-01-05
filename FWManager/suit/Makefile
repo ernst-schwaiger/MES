@@ -30,7 +30,7 @@ network:
 	sudo ../../RIOT/dist/tools/tapsetup/tapsetup -c
 	sudo ip address add $(NETWORK_PREFIX)/64 dev tapbr0
 
-all: unzip-fw create-manifest-basis generate-manifest sign-manifest clean
+all: unzip-fw create-manifest-basis generate-manifest sign-manifest notify-devices clean
 json: create-manifest-basis generate-manifest-json clean
 encrypt-json: encrypt-firmware create-manifest-basis generate-manifest-json clean
 encrypt: encrypt-firmware prepare-ephemeral-key move-keys all
@@ -57,6 +57,9 @@ generate-manifest:
 	@$(SUIT_TOOL_PATH) create -f suit -i $(MANIFEST_DIR)/suit.tmp -o $(MANIFEST_UNSIGNED_PATH)
 sign-manifest:
 	@$(SUIT_TOOL_PATH) sign -k ~/.local/share/RIOT/keys/default.pem -m $(MANIFEST_UNSIGNED_PATH) -o $(MANIFEST_SIGNED_PATH)
+notify-devices:
+	# Add more devices here as needed
+	@cd ../../RIOT/ && SUIT_COAP_SERVER=[2001:db8::1] SUIT_CLIENT=[2001:db8::2] BOARD=native make -C examples/advanced/suit_update suit/mes-notify
 clean:
 	#@rm $(MANIFEST_TEMP_PATH)
 	@rm -rf $(CURDIR)/suit-manifest-generator/suit_tool/__pycache__
