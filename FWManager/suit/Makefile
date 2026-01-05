@@ -22,7 +22,8 @@ FIRMWARE_ZIP_PATH = $(FIRMWARE_DIR)/update.tgz
 FIRMWARE_PATH = $(FIRMWARE_DIR)/update.bin
 FIRMWARE_ENCRYPTED_PATH = $(FIRMWARE_DIR)/update-enc.bin
 
-EPHEMERAL_PUBLIC_KEY_PATH = /cert/ephemeral-public.pem
+EPHEMERAL_PUBLIC_KEY_PATH = cert/ephemeral-public.pem
+
 network:
 	sudo ../../RIOT/dist/tools/tapsetup/tapsetup -c
 	sudo ip address add $(NETWORK_PREFIX)/64 dev tapbr0
@@ -36,7 +37,7 @@ unzip-fw:
 	@tar -xzf $(FIRMWARE_UPDATE_DIR)/update.tgz -C $(MANIFEST_DIR)
 
 encrypt-firmware:
-	@python3 $(CURDIR)/encrypt_firmware.py -c $(MANIFEST_DIR)/cert/public-self.pem -eo $(MANIFEST_DIR)$(EPHEMERAL_PUBLIC_KEY_PATH) -eoc $(EPHEMERAL_PUBLIC_KEY_PATH) -fn $(FIRMWARE_ENCRYPTED_PATH) $(FIRMWARE_PATH)
+	@python3 $(CURDIR)/encrypt_firmware.py -c $(MANIFEST_DIR)/cert/public-self.pem -eo $(MANIFEST_DIR)/$(EPHEMERAL_PUBLIC_KEY_PATH) -eoc $(EPHEMERAL_PUBLIC_KEY_PATH) -fn $(FIRMWARE_ENCRYPTED_PATH) $(FIRMWARE_PATH)
 
 create-manifest-basis:
 	@python3 $(CURDIR)/gen_manifest.py --urlroot $(COAP_URL) -mf $(MANIFEST_DIR)/manifest.mf -o $(MANIFEST_TEMP_PATH) $(FIRMWARE_ENCRYPTED_PATH):0:ram:0 --ecies ecies.json

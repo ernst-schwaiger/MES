@@ -97,7 +97,7 @@ def main(args):
             m = json.loads(args.ecies.read(), object_pairs_hook=OrderedDict)
             component.update({
                 "session-key": m['session-key'],
-                "ephemeral-public-key": m['ephemeral-public-key'],
+                "ephemeral-public-key": os.path.join(args.urlroot, m['ephemeral-public-key']),
                 "salt": m['salt']
             })
 
