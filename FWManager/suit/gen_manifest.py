@@ -40,6 +40,7 @@ def parse_arguments():
     parser.add_argument('slotfiles', nargs="+",
                         help='The list of slot file paths')
     parser.add_argument('--ecies', '-ec', metavar='FILE', type=argparse.FileType('r'), help='ECIES info file path')
+    parser.add_argument('--manifest', '-mf', metavar='FILE', type=argparse.FileType('r'), help='manifest metadata file path')
     return parser.parse_args()
 
 
@@ -49,7 +50,19 @@ def main(args):
     template = {}
 
     template["manifest-version"] = int(1)
-    template["manifest-sequence-number"] = int(args.seqnr)
+
+
+    if args.manifest:
+        data = {}
+        with args.manifest as file:
+            for line in file:
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    data[key.strip()] = value.strip()
+        template["manifest-sequence-number"] = data["SEQUENCE_NUMBER"]
+    else:
+        template["manifest-sequence-number"] = int(args.seqnr)
+
 
     images = []
     for filename_offset in args.slotfiles:
