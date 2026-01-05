@@ -53,10 +53,23 @@ make && \
 popd
 ```
 
-Run the `FWManager` server with the path to the FWManager configuration folder and a path to a python script, e.g.:
+Run the `FWManager` server with the path to the configuration folder and a path to a python script, e.g.:
 ```bash
 ./FWManager/FWManager ~/FWManagerConfigFolder ~/Python/processSignedFirmwarePackage.py
 ```
+
+The `./FWManager/FWManager` service expects at least the following files/subfolders in the passed configuration folder:
+
+| File | Comment |
+| - | - |
+|certificates/CA_Certificate.pem|Root/CA Certificate to verify Build_Certificate.pem, Mgmnt_Certificate.pem|
+|certificates/Build_Certificate.pem|Certificate for verifying signatures of incoming firmware update packages|
+|certificates/Mgmnt_Certificate.pem|Certificate for signing outgoing SUIT packages|
+|certificates/Mgmnt_priv.pem|Private key for signing outgoing SUIT packages|
+|FirmwareUpdateIn|Folder which contains incoming firmware update packages and their signature files|
+
+The configuration folder is created by running `make` in the `BuildSystem` folder, see also the section 
+"Generate keys and certificates, signing-tool, Install on Firmware Management Server" in the Build System [Readme.md](BuildSystem/README.md).
 
 The server logs messages to `/var/log/syslog`, which can be retrived via `sudo tail -f /var/log/syslog`, or via
 `sudo journalctl -t FWManager` (which filters out all syslog messages not related to the server).
