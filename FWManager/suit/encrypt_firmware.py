@@ -2,7 +2,7 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
 from Crypto.Protocol.KDF import PBKDF2
-from Crypto.Hash import SHA512
+from Crypto.Hash import SHA256
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 
@@ -49,7 +49,7 @@ def encrypt_key(encryption_key, wrapper_key):
 
 def derive_keys(password, salt):
     iterations = 200000                 
-    keys = PBKDF2(password, salt, KEY_LENGTH, iterations, hmac_hash_module=SHA512)
+    keys = PBKDF2(password, salt, KEY_LENGTH, iterations, hmac_hash_module=SHA256)
     return keys[:KEY_LENGTH]
 
 
