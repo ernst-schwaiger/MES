@@ -29,10 +29,11 @@ network:
 	sudo ../../RIOT/dist/tools/tapsetup/tapsetup -c
 	sudo ip address add $(NETWORK_PREFIX)/64 dev tapbr0
 
-all: create-manifest-basis generate-manifest sign-manifest notify-devices clean
-json: create-manifest-basis generate-manifest-json clean
-encrypt-json: unzip-fw encrypt-firmware create-manifest-basis generate-manifest-json clean
+all: create-manifest-basis-native generate-manifest sign-manifest notify-devices clean
+json: create-manifest-basis-native generate-manifest-json clean
+encrypt-json: unzip-fw encrypt-firmware create-manifest-basis-native generate-manifest-json clean
 encrypt: unzip-fw encrypt-firmware prepare-ephemeral-key move-keys all
+encrypt-samr: unzip-fw encrypt-firmware prepare-ephemeral-key move-keys create-manifest-basis-samr generate-manifest sign-manifest notify-devices clean
 
 
 prepare-ephemeral-key:
@@ -50,15 +51,18 @@ unzip-fw:
 encrypt-firmware:
 	@python3 $(CURDIR)/encrypt_firmware.py -c $(MANIFEST_DIR)/cert/public-self.pem -eo $(MANIFEST_DIR)/$(EPHEMERAL_PUBLIC_KEY_PATH) -eoc $(EPHEMERAL_PUBLIC_KEY_PATH_BSTR) -fn $(FIRMWARE_ENCRYPTED_PATH) $(FIRMWARE_PATH)
 
-create-manifest-basis:
+create-manifest-basis-native:
 	@python3 $(CURDIR)/gen_manifest.py --urlroot $(COAP_URL) -mf $(MANIFEST_DIR)/manifest.mf -o $(MANIFEST_TEMP_PATH) $(FIRMWARE_ENCRYPTED_PATH):0:ram:0 --ecies ecies.json
+create-manifest-basis-samr:
+	@python3 $(CURDIR)/gen_manifest.py --urlroot $(COAP_URL) -mf $(MANIFEST_DIR)/manifest.mf -o $(MANIFEST_TEMP_PATH) $(FIRMWARE_ENCRYPTED_PATH):0:ram:0 --ecies ecies.json -C samr21-xpro
 generate-manifest:
 	@$(SUIT_TOOL_PATH) create -f suit -i $(MANIFEST_DIR)/suit.tmp -o $(MANIFEST_UNSIGNED_PATH)
 sign-manifest:
 	@$(SUIT_TOOL_PATH) sign -k ~/.local/share/RIOT/keys/default.pem -m $(MANIFEST_UNSIGNED_PATH) -o $(MANIFEST_SIGNED_PATH)
 notify-devices:
 	# Add more devices here as needed
-	@cd ../../RIOT/ && SUIT_COAP_SERVER=[2001:db8::1] SUIT_CLIENT=[2001:db8::2] BOARD=native make -C examples/advanced/suit_update suit/mes-notify
+	# TODO adjust hardcoded ipv6
+	@aiocoap-client -m POST "coap://[fe80::a40b:97ff:fe20:19f%riot0]/suit/trigger" --payload "coap://[2001:db8::1]/suit_manifest.signed"
 clean:
 	@rm $(MANIFEST_TEMP_PATH)
 	@rm -rf $(CURDIR)/suit-manifest-generator/suit_tool/__pycache__

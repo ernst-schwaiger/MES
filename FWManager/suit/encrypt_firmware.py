@@ -48,7 +48,7 @@ def encrypt_key(encryption_key, wrapper_key):
     return nonce + tag + ciphertext
 
 def derive_keys(password, salt):
-    iterations = 200000                 
+    iterations = 10000
     keys = PBKDF2(password, salt, KEY_LENGTH, iterations, hmac_hash_module=SHA256)
     return keys[:KEY_LENGTH]
 
