@@ -458,7 +458,8 @@ class SUITParameters(SUITManifestDict):
         'offset' : ('offset', 5, SUITPosInt),
         'session-key' : ('session-key', 99, SUITBytes),
         'salt' : ('salt', 100, SUITBytes),
-        'ephemeral-public-key' : ('ephemeral-public-key', 101, SUITTStr)
+        'ephemeral-public-key' : ('ephemeral-public-key', 101, SUITTStr),
+        'iv' : ('iv', 102, SUITBytes)
     })
     def from_json(self, j):
         return super(SUITParameters, self).from_json(j)

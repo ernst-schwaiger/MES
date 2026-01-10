@@ -190,6 +190,7 @@ def compile_manifest(options, m):
         'class-id' : lambda cid, data: ('class-id', data['class-id']),
         'session-key' : lambda cid, data: ('session-key', data['session-key']),
         'ephemeral-public-key' : lambda cid, data: ('ephemeral-public-key', data['ephemeral-public-key']),
+        'iv' : lambda cid, data: ('iv', data['iv']),
         'salt' : lambda cid, data: ('salt', data['salt']),
         'offset' : lambda cid, data: ('offset', data['offset'])
     }
@@ -283,7 +284,7 @@ def compile_manifest(options, m):
             for cmd in DepRequiredSequences['install']:
                 InstSeq.append(cmd)
             InstSeq.append(mkCommand(cid, 'directive-fetch', None))
-            InstSeq.append(mkCommand(cid, 'condition-image-match', None))
+            #InstSeq.append(mkCommand(cid, 'condition-image-match', None))
 
         elif any(['uri' in c for c in choices]):
             FetchParams = {
@@ -337,7 +338,7 @@ def compile_manifest(options, m):
         ValidateSeq = make_sequence(cid, choices, ValidateSeq, ValidateParams, ValidateCmds)
         for cmd in DepRequiredSequences['validate']:
             ValidateSeq.append(cmd)
-        ValidateSeq.append(mkCommand(cid, 'condition-image-match', None))
+        #ValidateSeq.append(mkCommand(cid, 'condition-image-match', None))
         # if any([c.get('bootable', False) for c in choices]):
         # TODO: Dependencies
         # If there are dependencies

@@ -54,7 +54,7 @@ encrypt-firmware:
 create-manifest-basis-native:
 	@python3 $(CURDIR)/gen_manifest.py --urlroot $(COAP_URL) -mf $(MANIFEST_DIR)/manifest.mf -o $(MANIFEST_TEMP_PATH) $(FIRMWARE_ENCRYPTED_PATH):0:ram:0 --ecies ecies.json
 create-manifest-basis-samr:
-	@python3 $(CURDIR)/gen_manifest.py --urlroot $(COAP_URL) -mf $(MANIFEST_DIR)/manifest.mf -o $(MANIFEST_TEMP_PATH) $(FIRMWARE_ENCRYPTED_PATH):0:ram:0 --ecies ecies.json -C samr21-xpro
+	@python3 $(CURDIR)/gen_manifest.py $(FIRMWARE_ENCRYPTED_PATH):0x1000 $(FIRMWARE_ENCRYPTED_PATH):0x20800 --urlroot $(COAP_URL) -mf $(MANIFEST_DIR)/manifest.mf -o $(MANIFEST_TEMP_PATH) --ecies ecies.json -C samr21-xpro
 generate-manifest:
 	@$(SUIT_TOOL_PATH) create -f suit -i $(MANIFEST_DIR)/suit.tmp -o $(MANIFEST_UNSIGNED_PATH)
 sign-manifest:

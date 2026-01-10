@@ -27,8 +27,7 @@ def parse_arguments():
     return parser.parse_args()
 
 def encrypt_firmware(input_file, output_file, key):
-    nonce = get_random_bytes(NONCE_SIZE)
-    cipher = AES.new(key, AES.MODE_CBC, nonce)
+    cipher = AES.new(key, AES.MODE_CBC)
 
     with open(input_file, "rb") as f:
         plaintext = f.read()
@@ -36,7 +35,6 @@ def encrypt_firmware(input_file, output_file, key):
     ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
 
     with open(output_file, "wb") as f:
-        f.write(nonce)
         f.write(ciphertext)
 
     return cipher.iv
@@ -111,7 +109,8 @@ def main(args):
     template = {
         "ephemeral-public-key": args.ephemeral_public_coap,
         "salt": salt.hex(),
-        "session-key": session_key.hex()
+        "session-key": session_key.hex(),
+        "iv": iv.hex()
     }
 
     with open(args.output, 'w') as f:

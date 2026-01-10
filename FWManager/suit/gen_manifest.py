@@ -59,7 +59,7 @@ def main(args):
                 if '=' in line:
                     key, value = line.split('=', 1)
                     data[key.strip()] = value.strip()
-        template["manifest-sequence-number"] = data["SEQUENCE_NUMBER"]
+        template["manifest-sequence-number"] = int(data["SEQUENCE_NUMBER"])
     else:
         template["manifest-sequence-number"] = int(args.seqnr)
 
@@ -79,6 +79,11 @@ def main(args):
 
     template["components"] = []
 
+    m = {}
+
+    if args.ecies:
+        m = json.loads(args.ecies.read(), object_pairs_hook=OrderedDict)
+
     for slot, image in enumerate(images):
         filename, offset, comp_name = image
 
@@ -94,11 +99,11 @@ def main(args):
         }
 
         if args.ecies:
-            m = json.loads(args.ecies.read(), object_pairs_hook=OrderedDict)
             component.update({
                 "session-key": m['session-key'],
                 "ephemeral-public-key": os.path.join(args.urlroot, m['ephemeral-public-key']),
-                "salt": m['salt']
+                "salt": m['salt'],
+                "iv": m['iv']
             })
 
         if offset:
