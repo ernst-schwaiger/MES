@@ -29,3 +29,11 @@ update.tgz:
 
 clean:
 	rm -f update.* manifest.mf
+
+# Build the new SAMR21-xpro Firmware:
+# Under ~\RIOT\sys\suit\suit.c change the LOG_INFO output
+# Then execute APP_VER=1768046996 BOARD=samr21-xpro SUIT_COAP_SERVER=[2001:db8::1] make all -j4
+# APP_VER is the SEQUENCE_NUMBER needed for manifest
+build-elf:
+	SUIT_COAP_SERVER=[2001:db8::1] APP_VER=$(SEQUENCE_NUMBER) make -C ../../RIOT/examples/advanced/suit_update all -j4
+	mv ../../RIOT/examples/advanced/suit_update/bin/samr21-xpro/riotboot_files/slot0.$(SEQUENCE_NUMBER).bin update.bin
