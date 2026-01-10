@@ -138,3 +138,6 @@ DONE
   - [SUIT example general information](https://github.com/RIOT-OS/RIOT/tree/2025.07/examples/advanced/suit_update)
   - [SUIT native example](https://github.com/RIOT-OS/RIOT/blob/2025.07/examples/advanced/suit_update/README.native.md)
   - [SUIT hardware example](https://github.com/RIOT-OS/RIOT/blob/2025.07/examples/advanced/suit_update/README.hardware.md)
+
+- Flashing in WSL
+  - [Attach USB Device in WSL](https://guide.riot-os.org/getting-started/install-wsl/#attach-a-usb-device-to-wsl)
