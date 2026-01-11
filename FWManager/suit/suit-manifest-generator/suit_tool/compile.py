@@ -338,14 +338,12 @@ def compile_manifest(options, m):
         ValidateSeq = make_sequence(cid, choices, ValidateSeq, ValidateParams, ValidateCmds)
         for cmd in DepRequiredSequences['validate']:
             ValidateSeq.append(cmd)
-        #ValidateSeq.append(mkCommand(cid, 'condition-image-match', None))
+        ValidateSeq.append(mkCommand(cid, 'condition-image-match', None))
         # if any([c.get('bootable', False) for c in choices]):
         # TODO: Dependencies
         # If there are dependencies
             # Verify dependencies
             # Process dependencies
-        if c['session-key']:
-            ValidateSeq.append(mkCommand(cid, 'directive-decrypt-image', None))
 
         if any(['loadable' in c for c in choices]):
             # Generate image load section
