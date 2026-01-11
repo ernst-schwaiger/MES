@@ -9,7 +9,7 @@ FIRMWARE_UPDATE_DIR ?= ../FWUpdateIn
 NETWORK_PREFIX ?= 2001:db8::1
 
 COAP_URL ?= coap://[$(NETWORK_PREFIX)]/
-SEQ_NR ?= 1
+SEQ_NR ?= 1768046996
 
 # Paths for the files
 MANIFEST_TEMP_PATH ?= $(MANIFEST_DIR)/suit.tmp
@@ -31,7 +31,7 @@ network:
 
 all: create-manifest-basis-native generate-manifest sign-manifest notify-devices clean
 json: create-manifest-basis-native generate-manifest-json clean
-encrypt-json: unzip-fw encrypt-firmware create-manifest-basis-native generate-manifest-json clean
+encrypt-json: unzip-fw encrypt-firmware create-manifest-basis-samr generate-manifest-json clean
 encrypt: unzip-fw encrypt-firmware prepare-ephemeral-key move-keys all
 encrypt-samr: unzip-fw encrypt-firmware prepare-ephemeral-key move-keys create-manifest-basis-samr generate-manifest sign-manifest notify-devices clean
 
@@ -57,6 +57,7 @@ create-manifest-basis-samr:
 	@python3 $(CURDIR)/gen_manifest.py $(FIRMWARE_ENCRYPTED_PATH):0x1000 $(FIRMWARE_ENCRYPTED_PATH):0x20800 --urlroot $(COAP_URL) -mf $(MANIFEST_DIR)/manifest.mf -o $(MANIFEST_TEMP_PATH) --ecies ecies.json -C samr21-xpro
 generate-manifest:
 	@$(SUIT_TOOL_PATH) create -f suit -i $(MANIFEST_DIR)/suit.tmp -o $(MANIFEST_UNSIGNED_PATH)
+	@$(SUIT_TOOL_PATH) create -f json -i $(MANIFEST_DIR)/suit.tmp -o $(MANIFEST_UNSIGNED_PATH).json
 sign-manifest:
 	@$(SUIT_TOOL_PATH) sign -k ~/.local/share/RIOT/keys/default.pem -m $(MANIFEST_UNSIGNED_PATH) -o $(MANIFEST_SIGNED_PATH)
 notify-devices:
