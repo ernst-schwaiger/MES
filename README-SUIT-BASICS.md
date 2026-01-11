@@ -99,7 +99,10 @@ storage_content .ram.0 0 64
 ```
 
 ## SAMR21-xpro
-TODO
+```bash
+SUIT_COAP_SERVER=[2001:db8::1] SUIT_CLIENT=[fe80::a40b:97ff:fe20:19f%riot0] BOARD=samr21-xpro make suit/notify
+APP_VER=1768046993 BOARD=samr21-xpro SUIT_COAP_SERVER=[2001:db8::1] make suit/publish
+```
 
 # Analysis
 
