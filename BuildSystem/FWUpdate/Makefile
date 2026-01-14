@@ -15,25 +15,22 @@ CCOPTS		:= \
  -fdiagnostics-color 
 
 # Configure version and message of our app
-MSG="Hello, World!"
 VERSION="1.0.0"
-SEQUENCE_NUMBER="42"
+MSG="Hello, World $(VERSION)"
+SEQUENCE_NUMBER="1768046998"
  
 all: update.tgz
-
-update.tgz:
-	MSG=$(MSG) VERSION=$(VERSION) SEQUENCE_NUMBER=$(SEQUENCE_NUMBER) ./generator.sh update.c manifest.mf
-	$(CC) $(CCOPTS) -c update.c -o update.o
-	$(OBJCPY) -O binary --only-section=.hellofunc update.o update.bin
-	tar -czf update.tgz update.bin manifest.mf
-
-clean:
-	rm -f update.* manifest.mf
 
 # Build the new SAMR21-xpro Firmware:
 # Under ~\RIOT\sys\suit\suit.c change the LOG_INFO output
 # Then execute APP_VER=1768046996 BOARD=samr21-xpro SUIT_COAP_SERVER=[2001:db8::1] make all -j4
 # APP_VER is the SEQUENCE_NUMBER needed for manifest
-build-elf:
+update.tgz:
+	MSG=$(MSG) VERSION=$(VERSION) SEQUENCE_NUMBER=$(SEQUENCE_NUMBER) ./generator.sh update.c manifest.mf
+	sed 's|HELLO_WORLD|$(MSG)|' ../../RIOT/sys/suit/suit.c > ../../RIOT/sys/suit/suit_new.c
 	SUIT_COAP_SERVER=[2001:db8::1] APP_VER=$(SEQUENCE_NUMBER) make -C ../../RIOT/examples/advanced/suit_update all -j4
 	mv ../../RIOT/examples/advanced/suit_update/bin/samr21-xpro/riotboot_files/slot0.$(SEQUENCE_NUMBER).bin update.bin
+	tar -czf update.tgz update.bin manifest.mf
+
+clean:
+	rm -f update.* manifest.mf

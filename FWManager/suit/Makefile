@@ -6,6 +6,13 @@ SUIT_TOOL_PATH ?= python3 $(CURDIR)/suit-manifest-generator/bin/suit-tool
 MANIFEST_DIR ?= $(CURDIR)/manifests
 FIRMWARE_UPDATE_DIR ?= ../FWUpdateIn
 
+# The Build System Makefile copies its artefacts into the FWManager subfolder in the FIRMWARE_USER home folder,
+# the certs and keys are in the certificates subfolder
+# The certs folder can also be derived from the path to the firmware update passed to the python script
+# folder(<fw_update_file_package>)/../certificates
+CERTIFICATES_DIR 		:= $(HOME)/FWManager/certificates
+FWMANAGER_PRIVATE_KEY	:= $(CERTIFICATES_DIR)/Mgmnt_priv.pem
+
 NETWORK_PREFIX ?= 2001:db8::1
 
 COAP_URL ?= coap://[$(NETWORK_PREFIX)]/
@@ -59,7 +66,7 @@ generate-manifest:
 	@$(SUIT_TOOL_PATH) create -f suit -i $(MANIFEST_DIR)/suit.tmp -o $(MANIFEST_UNSIGNED_PATH)
 	@$(SUIT_TOOL_PATH) create -f json -i $(MANIFEST_DIR)/suit.tmp -o $(MANIFEST_UNSIGNED_PATH).json
 sign-manifest:
-	@$(SUIT_TOOL_PATH) sign -k ~/.local/share/RIOT/keys/default.pem -m $(MANIFEST_UNSIGNED_PATH) -o $(MANIFEST_SIGNED_PATH)
+	@$(SUIT_TOOL_PATH) sign -k $(FWMANAGER_PRIVATE_KEY) -m $(MANIFEST_UNSIGNED_PATH) -o $(MANIFEST_SIGNED_PATH)
 notify-devices:
 	# Add more devices here as needed
 	# TODO adjust hardcoded ipv6
