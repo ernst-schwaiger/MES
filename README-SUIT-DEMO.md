@@ -8,11 +8,13 @@
 
 The RIOT-OS dependencies:
 ```bash
-sudo apt install make gcc-multilib python3-serial python3-psutil wget unzip git openocd gdb-multiarch esptool podman-docker clangd clang`
+sudo apt install libudev-dev
+sudo apt install gcc-arm-none-eabi make gcc-multilib python3-serial python3-psutil wget unzip git openocd gdb-multiarch esptool podman-docker clangd clang
 ```
 
 SUIT-specific dependencies:
 ```bash
+pip3 install pycryptodome
 pip3 install --user cbor2 cryptography
 pip3 install --user aiocoap[linkheader]>=0.4.1
 ```
@@ -83,7 +85,7 @@ This task does the following things:
 - Notifies devices about updates
 ```bash
 # ~/FWManager/suit
-make encrypt-samr
+NETWORK_PREFIX=fe80::1 make encrypt-samr
 ```
 
 On success, the terminal where you entered the terminal, this should be the output.

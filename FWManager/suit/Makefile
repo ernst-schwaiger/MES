@@ -48,8 +48,8 @@ prepare-ephemeral-key:
 	@cd $(CERT_PATH) && openssl ec -pubin -in ephemeral-public.pem -outform DER -out pub_key.der -pubout
 
 move-keys:
-	@cd $(CERT_PATH) && (openssl ec -in pub_key.der -pubin -outform DER | xxd -p | tr -d '\n' | cut -c 55-182) > eph_key_bstr
-	@cd $(CERT_PATH) && python3 generate_key_file.py -o priv.h -vn priv_key_der "$(shell cd $(MANIFEST_DIR)/cert && openssl ec -in priv_key.der -outform DER | xxd -p | tr -d '\n' | cut -c 15-78)"
+	@cd $(CERT_PATH) && (openssl ec -inform DER -in pub_key.der -pubin -outform DER | xxd -p | tr -d '\n' | cut -c 55-182) > eph_key_bstr
+	@cd $(CERT_PATH) && python3 generate_key_file.py -o priv.h -vn priv_key_der "$(shell cd $(MANIFEST_DIR)/cert && openssl ec -inform DER -in priv_key.der -outform DER | xxd -p | tr -d '\n' | cut -c 15-78)"
 	@cd $(CERT_PATH) && mv priv.h ../../../../RIOT/examples/advanced/suit_update/priv.h
 
 unzip-fw:
@@ -72,7 +72,7 @@ notify-devices:
 	# TODO adjust hardcoded ipv6
 	@aiocoap-client -m POST "coap://[fe80::a40b:97ff:fe20:19f%riot0]/suit/trigger" --payload "coap://[2001:db8::1]/suit_manifest.signed"
 clean:
-	@rm $(MANIFEST_TEMP_PATH)
+	#@rm $(MANIFEST_TEMP_PATH)
 	@rm -rf $(CURDIR)/suit-manifest-generator/suit_tool/__pycache__
 	#@rm $(CERT_PATH)/priv_key.der
 	#@rm $(CERT_PATH)/pub_key.der
