@@ -17,8 +17,11 @@ CCOPTS		:= \
 # Configure version and message of our app
 VERSION="1.0.0"
 MSG="Hello, World $(VERSION)"
-SEQUENCE_NUMBER="1768046998"
- 
+SEQUENCE_NUMBER=1768046998
+
+CERTIFICATES_DIR 		?= /home/kuuko/MES/BuildSystem/FWManager/certificates
+FWMANAGER_PUBLIC_KEY	?= $(CERTIFICATES_DIR)/Mgmnt_Certificate.pem
+
 all: update.tgz
 
 # Build the new SAMR21-xpro Firmware:
@@ -27,9 +30,11 @@ all: update.tgz
 # APP_VER is the SEQUENCE_NUMBER needed for manifest
 update.tgz:
 	MSG=$(MSG) VERSION=$(VERSION) SEQUENCE_NUMBER=$(SEQUENCE_NUMBER) ./generator.sh update.c manifest.mf
-	sed 's|HELLO_WORLD|$(MSG)|' ../../RIOT/sys/suit/suit.c > ../../RIOT/sys/suit/suit_new.c
-	SUIT_COAP_SERVER=[2001:db8::1] APP_VER=$(SEQUENCE_NUMBER) make -C ../../RIOT/examples/advanced/suit_update all -j4
-	mv ../../RIOT/examples/advanced/suit_update/bin/samr21-xpro/riotboot_files/slot0.$(SEQUENCE_NUMBER).bin update.bin
+	# For ethos:
+	# SUIT_COAP_SERVER=[2001:db8::1] APP_VER=$(SEQUENCE_NUMBER) make -C ../../RIOT/examples/advanced/suit_update all -j4
+	# For 6LoWPAN:
+	SUIT_COAP_SERVER=[fe80::1] APP_VER=$(SEQUENCE_NUMBER) make -C ../../RIOT/examples/advanced/suit_update riotboot -j4
+	mv ../../RIOT/examples/advanced/suit_update/bin/samr21-xpro/riotboot_files/slot1.$(SEQUENCE_NUMBER).bin update.bin
 	tar -czf update.tgz update.bin manifest.mf
 
 clean:

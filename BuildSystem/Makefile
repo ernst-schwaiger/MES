@@ -37,6 +37,7 @@ LINKOPTS				:= -L$(LIBP11_LIB) -L$(OPENSSL_LIB) -lp11 -lcrypto
 all: FWManager/certificates/CA_Certificate.pem \
  FWManager/certificates/Build_Certificate.pem \
  .token_Cert FWManager/certificates/Mgmnt_Certificate.pem \
+ FWManager/certificates/Mgmnt_pub.pem \
  signing-tool \
  client_keypairs
 
@@ -96,6 +97,10 @@ FWManager/certificates/Mgmnt_Certificate.pem: Mgmnt_csr.pem FWManager/certificat
 	-CAcreateserial -days 365 \
 	-extensions v3_req -extfile MgmntSignReq.conf \
 	-out $@
+
+# TODO use this instead of RIOT generated key for validating SUIT manifest
+FWManager/certificates/Mgmnt_pub.pem: FWManager/certificates/Mgmnt_Certificate.pem
+	$(OPENSSL) x509 -in FWManager/certificates/Mgmnt_Certificate.pem -pubkey -noout > FWManager/certificates/Mgmnt_pub.pem
 
 Mgmnt_csr.pem: FWManager/certificates/Mgmnt_priv.pem MgmntSignReq.conf
 	$(OPENSSL) req -new -key FWManager/certificates/Mgmnt_priv.pem -config MgmntSignReq.conf -out $@

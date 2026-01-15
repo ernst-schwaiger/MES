@@ -4,7 +4,7 @@ APPLICATION = suit_gen_manifest
 
 SUIT_TOOL_PATH ?= python3 $(CURDIR)/suit-manifest-generator/bin/suit-tool
 MANIFEST_DIR ?= $(CURDIR)/manifests
-FIRMWARE_UPDATE_DIR ?= ../FWUpdateIn
+FIRMWARE_UPDATE_DIR ?= $(HOME)/FWManager/FWUpdateIn
 
 # The Build System Makefile copies its artefacts into the FWManager subfolder in the FIRMWARE_USER home folder,
 # the certs and keys are in the certificates subfolder

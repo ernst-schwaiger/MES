@@ -96,7 +96,7 @@ static vector<string> find_sig_files(const string &dir)
     return result;
 }
 
-static void pollForSignatureFiles(string const &firmwareUpdateInFolder, CertificateHandler const &certHandler, string const &pythonScript)
+static void pollForSignatureFiles(string const &firmwareUpdateInFolder, CertificateHandler const &certHandler, string const &target)
 {
     vector<string> sigFiles;
     do
@@ -120,14 +120,14 @@ static void pollForSignatureFiles(string const &firmwareUpdateInFolder, Certific
             {
                 stringstream s;
                 s << "File " << checkFile.c_str() << " was successfully verified against signature " << sigFile.c_str() << "\n";
-                syslog(LOG_INFO, s.str().c_str());
+                syslog(LOG_INFO, "%s", s.str().c_str());
 
                 s.clear();
-                s << "python3 " <<  pythonScript << " " << string(checkFile.c_str());
+                s << "NETWORK_PREFIX=fe80::1 make -C ~/MES/FWManager/suit " << target;
 
                 stringstream s2;
                 s2 << "Invoking " << s.str() << "...";
-                syslog(LOG_INFO, s2.str().c_str());
+                syslog(LOG_INFO, "%s", s2.str().c_str());
 
                 system(s.str().c_str());
             }
@@ -135,7 +135,7 @@ static void pollForSignatureFiles(string const &firmwareUpdateInFolder, Certific
             {
                 stringstream s;
                 s << "Failed to check" << checkFile.c_str() << " against signature " << sigFile.c_str() << "\n";
-                syslog(LOG_ERR, s.str().c_str());
+                syslog(LOG_ERR, "%s", s.str().c_str());
             }
 
             remove(checkFile);
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
     }
     catch(const runtime_error& e)
     {
-        syslog(LOG_CRIT, e.what());
+        syslog(LOG_CRIT, "%s", e.what());
         closelog();
         return 1;
     }
