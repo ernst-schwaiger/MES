@@ -41,6 +41,7 @@ def parse_arguments():
                         help='The list of slot file paths')
     parser.add_argument('--ecies', '-ec', metavar='FILE', type=argparse.FileType('r'), help='ECIES info file path')
     parser.add_argument('--manifest', '-mf', metavar='FILE', type=argparse.FileType('r'), help='manifest metadata file path')
+    parser.add_argument('--original', '-ogfn', help='original file for digest')
     return parser.parse_args()
 
 
@@ -104,6 +105,11 @@ def main(args):
                 "ephemeral-public-key": os.path.join(args.urlroot, m['ephemeral-public-key']),
                 "salt": m['salt'],
                 "iv": m['iv']
+            })
+
+        if args.original:
+            component.update({
+                "file-orig": args.original
             })
 
         if offset:

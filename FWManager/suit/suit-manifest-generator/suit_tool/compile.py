@@ -161,11 +161,12 @@ def compile_manifest(options, m):
 
     for id, choices in cid_data.items():
         for c in choices:
-            if 'file' in c:
+            if 'file' in c and 'file-orig' in c:
                 digest, imgsize = hash_file(c['file'], hashes.SHA256())
+                digestorig, imgsizeorig = hash_file(c['file-orig'], hashes.SHA256())
                 c['install-digest'] = {
                     'algorithm-id' : 'sha256',
-                    'digest-bytes' : digest.finalize()
+                    'digest-bytes' : digestorig.finalize()
                 }
                 c['install-size'] = imgsize
 
