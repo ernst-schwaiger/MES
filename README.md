@@ -1,6 +1,18 @@
 # MES
 Mobile and Embedded Security: Secure Firmware Update
 
+Students:
+- Miguel Arcilla
+- Chiara Fedrizzi
+- Kilian Hnidek
+- Viktor Nawrata
+- Stefan Ohnewith
+- Ernst Schwaiger
+
+Repository Links:
+- MES implementations: https://github.com/ernst-schwaiger/MES/tree/main
+- RIOT-OS changes: https://github.com/Cthuuko/RIOT/tree/be2c56fcc14f5245d1e8482a66e522ed368f1c18
+
 ## Project Challenges
 
 ### Broken Feitian Crypto Tokens
@@ -13,7 +25,11 @@ The original plan in the project was to create a script `signAndDeliver.sh`, whi
 
 It turned out that - for security reasons - it is not possible to pass that PIN directly to the SSH client via command line, which forces the user in our workflow to enter the PIN twice. As a mitigation, we tried to use the SSH agent to cache the PIN value upfront, but the agent then was interfering with the signing app we built, i.e. only every other PIN authentication attempt of our signing app was successful with the SSH agent running (we still don't know the reason for that). Hence, we decided not to use the SSH agent.
 
-@MIGU: Add your challenges here, e.g. having to use a Raspi 3 instead of a 4?
+### Radio Module not working with Raspberry Pi 4B
+Since the Raspberry Pi 4B has more resources than the Raspberry Pi 3, it was attempted to use the 4B together with the radio module, unfortunately the communication between the client and the Pi 4B was not possible, as described in the Elvis Wiki [6LoWPAN Setup](https://wiki.elvis.science/index.php?title=Raspberry_Pi_3B%2B_802.15.4/6LoWPAN_Setup)
+
+### Speed of the Firmware Download
+During the update process, the download speed of the SAMR21-xpro was heavily reliant on the distance between the client and the radio module. A distance further than around 20 cm may have caused a possible update duration up to 15-20 minutes. A closer distance such as 3 cm may have caused a duration of 2-3 minutes.
 
 ## Building the Project
 
@@ -59,7 +75,7 @@ Open a new terminal so that the settings are taken over, test with `which openss
 Checkout pkcs11-provider.git provider, build, install it to local folder. A few warnings regarding runtime dependencies appear, they can be ignored.
 ```bash
 git clone https://github.com/latchset/pkcs11-provider.git && \
-pushd pkcs11-provider
+pushd pkcs11-provider && \
 meson setup build --prefix=$HOME/pkcs11-local && \
 ninja -C build && \
 ninja -C build install && \
@@ -164,14 +180,23 @@ Before executing any of the steps below, verify in `MES/BuildSystem/Makefile` th
 
 ### Firmware Management Server
 
-@MIGU: Check: Proper version of raspi, OS version you were using
-The Firmware Management Server is a Raspberry Pi 3B, with a Raspbian Buster OS installed. Check out the complete repository into the `${HOME}` folder of the user account configured as `FIRMWARE_USER` in `MES/BuildSystem/Makefile`.
+The Firmware Management Server is a Raspberry Pi 3B, with a [Raspbian Buster](https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2021-05-28/2021-05-07-raspios-buster-arm64.zip) OS which had an [OpenLabs 802.15.4 radio](https://wiki.elvis.science/index.php?title=Raspberry_Pi_3B%2B_802.15.4/6LoWPAN_Setup#Setup/Config_802.15.4/6LoWPAN_on_a_Raspberry). Check out the complete repository into the `${HOME}` folder of the user account configured as `FIRMWARE_USER` in `MES/BuildSystem/Makefile`.
 
 Install dependencies
-
-@MIGU: Add your dependencies here
 ```bash
-sudo apt install gcc g++ make meson opensc gcc-arm-none-eabi libssl-dev
+# RIOT-OS and Build System dependencies
+sudo apt install gcc g++ make meson opensc gcc-arm-none-eabi libssl-dev libudev-dev gcc-multilib python3-serial python3-psutil wget unzip git openocd gdb-multiarch esptool podman-docker clangd clang
+```
+```bash
+# SUIT-specific dependencies
+pip3 install pycryptodome
+pip3 install --user cbor2 cryptography
+pip3 install --user aiocoap[linkheader]>=0.4.1
+```
+```bash
+# Fetch the RIOT repository
+git submodule init
+git submodule update --remote
 ```
 
 #### Build Firmware Management Server daemon
@@ -189,20 +214,109 @@ The `certificates` sub folder is created and populated with the required certifi
 
 In the `MES` folder, run `make -C FWManager` to create the daemon binary. When executing the daemon, it must be passed the `FWManager` folder and a specific makefile target, i.e.
 
-@MIGU: Check/extend here
 ```bash
 ~/MES/FWManager/FWManager ~/FWManager encrypt-samr
 ```
 
-The `FWManager` will poll the folder `FWManager/FirmwareUpdateIn` cyclically for incoming update packages, which will be two files, `<fwupdatepkg>` and `<fwupdatepkg>.sig`. When it detects these files in the folder, it first verifies the validity of `certificates/Build_Certificate.pem`, then verifies the validity of the signature `<fwupdatepkg>.sig` w.r.t the firmware update package `<fwupdatepkg>`. If both checks pass, it will invoke the makefile target which was passed via the command line, which will unzip the firmware update package `<fwupdatepkg>`, create a signed and encrypted SUIT update package, and send it to the SAMR21 xPro nodes.
+The `FWManager` will poll the folder `FWManager/FirmwareUpdateIn` cyclically for incoming update packages, which will be two files, `<fwupdatepkg>` and `<fwupdatepkg>.sig`. When it detects these files in the folder, it first verifies the validity of `certificates/Build_Certificate.pem`, then verifies the validity of the signature `<fwupdatepkg>.sig` with respect to the firmware update package `<fwupdatepkg>`. If both checks pass, it will invoke the makefile target which was passed via the command line, which will unzip the firmware update package `<fwupdatepkg>`, create a signed and encrypted SUIT update package, and send it to the SAMR21 xPro nodes.
 
 If either the certificate is not valid, or `<fwupdatepkg>.sig` is not a valid signature of `<fwupdatepkg>`, the daemon will report an error and stop further processing. It logs messages to `/var/log/syslog`, which can be retrieved via `sudo tail -f /var/log/syslog`, or via `sudo journalctl -t FWManager` (which filters out all syslog messages not related to the server).
 
-@MIGU: Add anything you need to add here for the Firmware Management Server
-#### Build COAP and SUIT packages
+#### Prepare CoAP File Server for SUIT manifest and Firmware
+In order for the Client nodes to fetch the update, we need to provide a CoAP File Server. This is done in the folder `~/MES/FWManager`
+```bash
+aiocoap-fileserver manifests/
+```
 
-@MIGU: Add anything you need to add here for the client nodes
-### SAMR21 xPro Node
+### Prepare network
+The Firmware Management Server has a persistent wpan interface created through this [guide](https://wiki.elvis.science/index.php?title=Raspberry_Pi_3B%2B_802.15.4/6LoWPAN_Setup#Installation_of_Linux_WPAN_tools)
+
+The IP of the Firmware Management Server is always `fe80::1`.
+
+### SAMR21-xpro Node
+The unpatched application can be flashed to the SAMR21-xpro from the RIOT folder inside the project under `~/MES/RIOT/examples/advanced/suit_update`
+```bash
+APP_VER=1 make clean flash -j4
+```
+
+The firmware change happens under `~/MES/RIOT/sys/suit/suit.c`:
+```C
+static int _mes_echo_command(int argc, char **argv)
+{
+    (void) argc; (void) argv;
+    LOG_INFO("HELLO WORLD!\n"); // <-- This value gets changed
+    return 0;
+}
+```
+
+Get access to the terminal to verify the firmware.
+```bash
+make term
+```
+
+To verify that the "old" firmware has been installed, you can enter the shell command `mes_echo`.
+The output should be:
+```bash
+> mes_echo
+mes_echo
+HELLO WORLD!
+```
+
+### Build new version
+To trigger a new version, the Build system must detect a new firmware package that starts the make task `encrypt-samr`.
+This task does the following things:
+- Unzips the new verified FW package
+- Create a new ephemeral key pair
+- Encrypt the firmware
+- Store ephemeral public key in Fileserver folder
+- Copy private key of client to RIOT build
+- Generate a new manifest in CBOR and JSON formats
+- Signs the manifest with the public key of `Mgmnt_priv.pem`
+- Notifies devices about updates
+
+This make task can also be manually triggered under under `~/MES/FWManager/suit`:
+```bash
+# ~/FWManager/suit
+NETWORK_PREFIX=fe80::1 make encrypt-samr
+```
+
+On success, the terminal where you entered the terminal, this should be the output.
+The board will download, decrypt and install the new firmware into the inactive slot. In this case, slot 1.
+```bash
+suit_worker: downloading "coap://[fe80::1]/suit_manifest.signed"
+suit_worker: got manifest with size 480
+suit: verifying manifest signature
+...
+riotboot_flashwrite: initializing update to target slot 1
+Fetching firmware |███████                  |  28%
+```
+
+After successful update, the device will restart and start the firmware image with the newer version.
+In this case, the firmware that was just decrypted and installed.
+```bash
+suit_worker: update successful
+suit_worker: rebooting...
+Failed to send flush request: Operation not permitted
+gnrc_uhcpc: Using 5 as border interface and 0 as wireless interface.
+gnrc_uhcpc: only one interface found, skipping setup.
+main(): This is RIOT! (Version: f2a59)
+RIOT SUIT update example application
+Running from slot 1
+Image magic_number: 0x544f4952
+Image Version: 0x69624194
+Image start address: 0x00020900
+Header chksum: 0xb1f4519a
+
+Starting the shell
+```
+
+To verify that a new firmware has been installed, you can enter the shell command `mes_echo`.
+The output should be:
+```bash
+> mes_echo
+mes_echo
+I HAVE BEEN UPDATED!
+```
 
 ## Resources
 
