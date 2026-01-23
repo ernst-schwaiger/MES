@@ -18,7 +18,7 @@ using namespace fwm;
 
 static void usage(char *argv0)
 {
-    cerr << "Usage: " << argv0 << " <config folder> <python script>\n";
+    cerr << "Usage: " << argv0 << " <config folder> <make target>\n";
     exit(1);
 }
 
