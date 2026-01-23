@@ -1,18 +1,19 @@
 # MES
 Mobile and Embedded Security: Secure Firmware Update
 
-## Challenges
+## Project Challenges
 
 ### Broken Feitian Crypto Tokens
 
 In the project, we decided to use the Feitian ePass2003 Security Token for signing the firmware update package, and for SSH/SCP authentication with the Firmware Update Manager. During the project integration phase it turned out that not all of the tokens were actually working, which delayed the project progress. We recommend to test the crypto tokens upfront before passing them on to the next MES project teams.
 
-
 ### Entering the Feitian PIN
 
 The original plan in the project was to create a script `signAndDeliver.sh`, which will be passed the PIN once, then the script will use that PIN for signing the firmware update package and provide it to the SSH client for transferring files to the Firmware Management Server.
 
-It turned out that - for security reasons - it is not possible to pass that PIN directly to the SSH client via command line, which forces the user in our workflow to enter the PIN twice. As a mitigation, we tried to use the SSH agent to cache the PIN value upfront, but the agent then was interfering with the signing app we built, i.e. only every other PIN authentication attempt of our signing app was failing with the SSH agent running (we still don't know the reason for that). Hence, we decided not to use the SSH agent.
+It turned out that - for security reasons - it is not possible to pass that PIN directly to the SSH client via command line, which forces the user in our workflow to enter the PIN twice. As a mitigation, we tried to use the SSH agent to cache the PIN value upfront, but the agent then was interfering with the signing app we built, i.e. only every other PIN authentication attempt of our signing app was successful with the SSH agent running (we still don't know the reason for that). Hence, we decided not to use the SSH agent.
+
+@MIGU: Add your challenges here, e.g. having to use a Raspi 3 instead of a 4?
 
 ## Building the Project
 
@@ -163,6 +164,7 @@ Before executing any of the steps below, verify in `MES/BuildSystem/Makefile` th
 
 ### Firmware Management Server
 
+@MIGU: Check: Proper version of raspi, OS version you were using
 The Firmware Management Server is a Raspberry Pi 3B, with a Raspbian Buster OS installed. Check out the complete repository into the `${HOME}` folder of the user account configured as `FIRMWARE_USER` in `MES/BuildSystem/Makefile`.
 
 Install dependencies
@@ -174,7 +176,7 @@ sudo apt install gcc g++ make meson opensc gcc-arm-none-eabi libssl-dev
 
 #### Build Firmware Management Server daemon
 
-In the `${HOME}` folder of the `FIRMWARE_USER`, create a folder `FWManager`, and a folder `FWFWManager/FirmwareUpdateIn`.
+In the `${HOME}` folder of the `FIRMWARE_USER`, create a folder `FWManager`, and a folder `FWManager/FirmwareUpdateIn`.
 The `certificates` sub folder is created and populated with the required certificates by running `make install_certs` on the build system.
 
 | File | Comment |
@@ -192,7 +194,7 @@ In the `MES` folder, run `make -C FWManager` to create the daemon binary. When e
 ~/MES/FWManager/FWManager ~/FWManager encrypt-samr
 ```
 
-The `FWManager` will poll the folder `FWFWManager/FirmwareUpdateIn` cyclically for incoming update packages, which will be two files, `<fwupdatepkg>` and `<fwupdatepkg>.sig`. When it detects these files in the folder, it first verifies the validity of `certificates/Build_Certificate.pem`, then verify the validity of the signature `<fwupdatepkg>.sig` w.r.t the firmware update package `<fwupdatepkg>`. If both checks pass, it will invoke the makefile target which was passed via the command line, which will unzip the firmware update package <fwupdatepkg>`, create a signed and encrypted SUIT update package, and send it to the SAMR21 xPro nodes.
+The `FWManager` will poll the folder `FWManager/FirmwareUpdateIn` cyclically for incoming update packages, which will be two files, `<fwupdatepkg>` and `<fwupdatepkg>.sig`. When it detects these files in the folder, it first verifies the validity of `certificates/Build_Certificate.pem`, then verifies the validity of the signature `<fwupdatepkg>.sig` w.r.t the firmware update package `<fwupdatepkg>`. If both checks pass, it will invoke the makefile target which was passed via the command line, which will unzip the firmware update package `<fwupdatepkg>`, create a signed and encrypted SUIT update package, and send it to the SAMR21 xPro nodes.
 
 If either the certificate is not valid, or `<fwupdatepkg>.sig` is not a valid signature of `<fwupdatepkg>`, the daemon will report an error and stop further processing. It logs messages to `/var/log/syslog`, which can be retrieved via `sudo tail -f /var/log/syslog`, or via `sudo journalctl -t FWManager` (which filters out all syslog messages not related to the server).
 
@@ -225,4 +227,4 @@ If either the certificate is not valid, or `<fwupdatepkg>.sig` is not a valid si
 - Flashing in WSL
   - [Attach USB Device in WSL](https://guide.riot-os.org/getting-started/install-wsl/#attach-a-usb-device-to-wsl)
 
-- [Feitian ePass2003 Security Token] https://www.ftsafe.com/store/product/epass2003-pki-token/
+- [Feitian ePass2003 Security Token](https://www.ftsafe.com/store/product/epass2003-pki-token/)
