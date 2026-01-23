@@ -10,7 +10,7 @@ Students:
 - Ernst Schwaiger
 
 Repository Links:
-- MES implementations: https://github.com/ernst-schwaiger/MES/tree/main
+- MES implementations: https://github.com/ernst-schwaiger/MES.git
 - RIOT-OS changes: https://github.com/Cthuuko/RIOT/tree/be2c56fcc14f5245d1e8482a66e522ed368f1c18
 
 ## Project Challenges
@@ -174,9 +174,8 @@ Before executing any of the steps below, verify in `MES/BuildSystem/Makefile` th
 
 - adapt `MSG` and `VERSION` in `MES/BuildSystem/FWUpdate/Makefile`
 - in the `MES/BuildSystem` folder, do the following steps
-  - run `make -C MES/BuildSystem` to create a firmware update package in `MES/BuildSystem/FWUpdate/update.tgz`
+  - run `make -C FWUpdate` to create a firmware update package in `MES/BuildSystem/FWUpdate/update.tgz`
   - run `make install_firmware` to deliver the firmware to the Firmware Management Server
-
 
 ### Firmware Management Server
 
